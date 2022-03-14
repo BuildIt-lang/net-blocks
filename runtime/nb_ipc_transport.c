@@ -48,7 +48,7 @@ void nb__ipc_init(const char* sock_path, int mode) {
 	}
 }
 #define IPC_MTU (1024)
-char* nbr__poll_packet(int* size) {
+char* nb__poll_packet(int* size) {
 	int len;
 	static char temp_buf[IPC_MTU];
 	len = (int) read(ipc_socket, temp_buf, IPC_MTU);
@@ -61,6 +61,7 @@ char* nbr__poll_packet(int* size) {
 	}
 	return NULL;
 }
-int nbr__send_packet(char* buff, int len) {
+int nb__send_packet(char* buff, int len) {
+	//nb__debug_packet(buff);
 	return (int) write(ipc_socket, buff, len);	
 }

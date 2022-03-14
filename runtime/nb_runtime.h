@@ -24,35 +24,35 @@ struct connection_t {
 	void (*callback_f)(int, struct connection_t*);
 };
 
-typedef struct connection_t nbr__connection_t;
-static int nbr__connection_t_size(void) {
-	return sizeof(nbr__connection_t);
+typedef struct connection_t nb__connection_t;
+static int nb__connection_t_size(void) {
+	return sizeof(nb__connection_t);
 }
 
-struct data_queue_t* nbr__new_data_queue(void);
-void nbr__free_data_queue(struct data_queue_t*);
-void nbr__insert_data_queue(struct data_queue_t*, char*, int);
+struct data_queue_t* nb__new_data_queue(void);
+void nb__free_data_queue(struct data_queue_t*);
+void nb__insert_data_queue(struct data_queue_t*, char*, int);
 
-void nbr__add_connection(nbr__connection_t*, unsigned sa);
-void nbr__delete_connection(unsigned sa);
-nbr__connection_t* nbr__retrieve_connection(unsigned sa);
+void nb__add_connection(nb__connection_t*, unsigned sa);
+void nb__delete_connection(unsigned sa);
+nb__connection_t* nb__retrieve_connection(unsigned sa);
 
-extern unsigned int nbr__my_host_id;
+extern unsigned int nb__my_host_id;
 
 
-char* nbr__poll_packet(int*);
-int nbr__send_packet(char*, int);
+char* nb__poll_packet(int*);
+int nb__send_packet(char*, int);
 
 void nb__ipc_init(const char* sock_path, int mode);
 
-void nbr__main_loop_step(void);
+void nb__main_loop_step(void);
 void nb__run_ingress_step (void);
 
-int nb__send (nbr__connection_t* arg0, char* arg1, int arg2);
-void nb__destablish (nbr__connection_t* arg0);
-int nb__read(nbr__connection_t*, char*, int);
+int nb__send (nb__connection_t* arg0, char* arg1, int arg2);
+void nb__destablish (nb__connection_t* arg0);
+int nb__read(nb__connection_t*, char*, int);
 
-nbr__connection_t* nb__establish (unsigned int arg0, unsigned int arg1, unsigned int arg2, void (*arg3)(int, nbr__connection_t*));
+nb__connection_t* nb__establish (unsigned int arg0, unsigned int arg1, unsigned int arg2, void (*arg3)(int, nb__connection_t*));
 
-void nbr__debug_packet(char* p);
+void nb__debug_packet(char* p);
 #endif

@@ -5,7 +5,7 @@
 
 namespace net_blocks {
 
-#define CONNECTION_T_STR "nbr__connection_t"
+#define CONNECTION_T_STR "nb__connection_t"
 extern const char connection_t_name[];
 
 using connection_t = builder::name<connection_t_name>;

@@ -5,7 +5,7 @@
 #define SERVER_MSG ("Hello from server")
 
 int running = 1;
-static void callback(int event, nbr__connection_t * c) {
+static void callback(int event, nb__connection_t * c) {
 	if (event == QUEUE_EVENT_READ_READY) {
 		char buff[65];
 		int len = nb__read(c, buff, 64);
@@ -20,12 +20,12 @@ static void callback(int event, nbr__connection_t * c) {
 int main(int argc, char* argv[]) {
 	nb__ipc_init("/tmp/ipc_socket", 1);
 	printf("IPC initialized\n");
-	nbr__my_host_id = 10001;
+	nb__my_host_id = 10001;
 
-	nbr__connection_t * conn = nb__establish(10002, 8081, 8080, callback);
+	nb__connection_t * conn = nb__establish(10002, 8081, 8080, callback);
 
 	while (running) {
-		nbr__main_loop_step();
+		nb__main_loop_step();
 		usleep(100 * 1000);
 	}
 	nb__destablish(conn);
