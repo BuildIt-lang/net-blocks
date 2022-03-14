@@ -9,11 +9,11 @@ void payload_module::init_module(void) {
 	framework::instance.register_module(this);	
 }
 
-module::hook_status payload_module::hook_send(builder::dyn_var<connection_t*> c, packet_t, 
+module::hook_status payload_module::hook_send(builder::dyn_var<connection_t*> c, packet_t p,
 	builder::dyn_var<char*> buff, builder::dyn_var<unsigned int> len, builder::dyn_var<int*> ret_len) {
 	ret_len[0] = len;
-	runtime::memcpy(net_packet["payload"]->get_addr(c), buff, len);	
-	net_packet["total_len"]->set_integer(c, (net_packet.get_total_size() - 1) + len);
+	runtime::memcpy(net_packet["payload"]->get_addr(p), buff, len);	
+	net_packet["total_len"]->set_integer(p, (net_packet.get_total_size() - 1) + len);
 	return module::hook_status::HOOK_CONTINUE;
 }
 

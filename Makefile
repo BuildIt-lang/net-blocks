@@ -2,6 +2,9 @@
 BASE_DIR=$(shell pwd)
 SRC_DIR=$(BASE_DIR)/src
 BUILD_DIR?=$(BASE_DIR)/build
+RUNTIME_DIR?=$(BASE_DIR)/runtime
+SCRATCH_DIR?=$(BASE_DIR)/scratch
+TEST_DIR?=$(BASE_DIR)/test
 INCLUDE_DIR=$(BASE_DIR)/include
 BUILDIT_DIR?=$(BASE_DIR)/buildit
 
@@ -14,6 +17,7 @@ SRCS=$(wildcard $(SRC_DIR)/*.cpp) $(wildcard $(SRC_DIR)/*/*.cpp)
 OBJS=$(subst $(SRC_DIR),$(BUILD_DIR),$(SRCS:.cpp=.o))
 
 
+$(shell mkdir -p $(SCRATCH_DIR))
 $(shell mkdir -p $(BUILD_DIR))
 $(shell mkdir -p $(BUILD_DIR)/core)
 $(shell mkdir -p $(BUILD_DIR)/impls)
@@ -69,5 +73,12 @@ $(BUILD_DIR)/impls/%.o: $(SRC_DIR)/impls/%.cpp $(INCLUDES)
 $(BUILD_DIR)/impls/simple: $(BUILD_DIR)/impls/simple.o $(LIBRARY) dep
 	$(CXX) -o $@ $< $(LINKER_FLAGS)
 
+
+.PHONY: simple_test
+simple_test: executables
+	$(BUILD_DIR)/impls/simple > $(SCRATCH_DIR)/nb_simple.c
+	$(CC) $(SCRATCH_DIR)/nb_simple.c $(RUNTIME_DIR)/nb_runtime.c $(RUNTIME_DIR)/nb_ipc_transport.c $(TEST_DIR)/test_simple/server.c -I $(RUNTIME_DIR) -o $(BUILD_DIR)/test_simple_server -g
+	$(CC) $(SCRATCH_DIR)/nb_simple.c $(RUNTIME_DIR)/nb_runtime.c $(RUNTIME_DIR)/nb_ipc_transport.c $(TEST_DIR)/test_simple/client.c -I $(RUNTIME_DIR) -o $(BUILD_DIR)/test_simple_client -g
+	-rm /tmp/ipc_socket
 clean:
 	rm -rf $(BUILD_DIR)

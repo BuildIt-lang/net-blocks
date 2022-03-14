@@ -11,12 +11,13 @@ void framework::register_module(module *m) {
 	m_registered_modules.push_back(m);
 }
 // Implementations for various paths	
-builder::dyn_var<connection_t*> framework::run_establish_path(builder::dyn_var<unsigned int> host_id, builder::dyn_var<unsigned int> app_id) {
+builder::dyn_var<connection_t*> framework::run_establish_path(builder::dyn_var<unsigned int> host_id, builder::dyn_var<unsigned int> app_id, 
+	builder::dyn_var<unsigned int> src_app_id) {
 	// Establish a new connection object
 	builder::dyn_var<connection_t*> conn = runtime::malloc(runtime::connection_t_size());
 
 	for (builder::static_var<unsigned int> i = 0; i < m_registered_modules.size(); i++) {
-		builder::static_var<int> s = (int)m_registered_modules[i]->hook_establish(conn, host_id, app_id);
+		builder::static_var<int> s = (int)m_registered_modules[i]->hook_establish(conn, host_id, app_id, src_app_id);
 		if (s == (int)module::hook_status::HOOK_DROP)
 			break;
 	}

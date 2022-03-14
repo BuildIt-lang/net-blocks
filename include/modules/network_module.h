@@ -1,11 +1,11 @@
-#ifndef NET_BLOCKS_PAYLOAD_MODULE_H
-#define NET_BLOCKS_PAYLOAD_MODULE_H
+#ifndef NET_BLOCKS_NETWORK_MODULE_H
+#define NET_BLOCKS_NETWORK_MODULE_H
 
 #include "core/framework.h"
 
 namespace net_blocks {
 
-class payload_module: public module {
+class network_module: public module {
 public:
 	void init_module(void);
 	

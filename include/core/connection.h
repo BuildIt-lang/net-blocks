@@ -10,7 +10,7 @@ extern const char connection_t_name[];
 
 using connection_t = builder::name<connection_t_name>;
 
-struct connection_layout_t {
+struct dynamic_object {
 	using type = builder::name<connection_t_name>;
 	using ptr = builder::dyn_var<type*>;
 
@@ -29,7 +29,8 @@ struct connection_layout_t {
 	}
 };
 
-extern connection_layout_t conn_layout;
+extern dynamic_object conn_layout;
+extern dynamic_object init_params;
 
 }
 
