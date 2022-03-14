@@ -16,6 +16,8 @@ OBJS=$(subst $(SRC_DIR),$(BUILD_DIR),$(SRCS:.cpp=.o))
 
 $(shell mkdir -p $(BUILD_DIR))
 $(shell mkdir -p $(BUILD_DIR)/core)
+$(shell mkdir -p $(BUILD_DIR)/impls)
+$(shell mkdir -p $(BUILD_DIR)/modules)
 
 BUILDIT_LIBRARY_NAME=buildit
 BUILDIT_LIBRARY_PATH=$(BUILDIT_DIR)/build
@@ -38,18 +40,20 @@ CFLAGS+=-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wmi
 
 all: executables $(LIBRARY)
 
-.PHONY: subsystem
-subsystem:
+.PHONY: dep
+dep:
 	make -C $(BUILDIT_DIR)
 
 .PRECIOUS: $(BUILD_DIR)/core/%.o
+.PRECIOUS: $(BUILD_DIR)/modules/%.o
+.PRECIOUS: $(BUILD_DIR)/impls/%.o
 
 
 .PHONY: $(BUILDIT_LIBRARY_PATH)/lib$(BUILDIT_LIBRARY_NAME).a
 
 
 .PHONY: executables
-executables: 
+executables: $(BUILD_DIR)/impls/simple
 
 
 $(LIBRARY): $(OBJS)
@@ -57,6 +61,13 @@ $(LIBRARY): $(OBJS)
 	
 $(BUILD_DIR)/core/%.o: $(SRC_DIR)/core/%.cpp $(INCLUDES)
 	$(CXX) $(CFLAGS) $< -o $@ $(INCLUDE_FLAG) -c
+$(BUILD_DIR)/modules/%.o: $(SRC_DIR)/modules/%.cpp $(INCLUDES)
+	$(CXX) $(CFLAGS) $< -o $@ $(INCLUDE_FLAG) -c
+$(BUILD_DIR)/impls/%.o: $(SRC_DIR)/impls/%.cpp $(INCLUDES)
+	$(CXX) $(CFLAGS) $< -o $@ $(INCLUDE_FLAG) -c
+
+$(BUILD_DIR)/impls/simple: $(BUILD_DIR)/impls/simple.o $(LIBRARY) dep
+	$(CXX) -o $@ $< $(LINKER_FLAGS)
 
 clean:
 	rm -rf $(BUILD_DIR)
