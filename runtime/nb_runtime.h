@@ -62,6 +62,9 @@ nb__connection_t* nb__establish (char* arg0, unsigned int arg1, unsigned int arg
 void nb__debug_packet(char* p);
 
 void nb__mlx5_init(void);
+
+extern char nb__reuse_mtu_buffer[];
+
 #ifdef __cplusplus 
 }
 #endif

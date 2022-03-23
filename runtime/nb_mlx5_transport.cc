@@ -16,6 +16,8 @@
 static Transport * transport;
 #define MLX5_MTU (1024)
 
+char nb__reuse_mtu_buffer[MLX5_MTU];
+
 void nb__mlx5_init(void) {
 	transport = new Transport();	
 }
@@ -45,8 +47,9 @@ char* nb__poll_packet(int* size, int headroom) {
 	}
 		
 	int delta = transport->try_recv();
-	if (delta == 0)
+	if (delta == 0) {	
 		return nullptr;
+	}
 	packet_addr = transport->recv_buffer + (transport->recv_idx % 4096) * IBV_FRAME_SIZE;
 	transport->recv_idx++;
 	pending_recv = delta - 1;

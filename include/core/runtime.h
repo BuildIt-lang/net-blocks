@@ -27,6 +27,7 @@ extern builder::dyn_var<void* (int)> retrieve_connection;
 extern builder::dyn_var<char*> my_host_id;
 
 extern builder::dyn_var<void (void*)> debug_packet;
+extern builder::dyn_var<char*> reuse_mtu_buffer;
 }
 }
 

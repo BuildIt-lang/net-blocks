@@ -37,6 +37,7 @@ builder::dyn_var<int> framework::run_send_path(builder::dyn_var<connection_t*> c
 	builder::dyn_var<char*> buff, builder::dyn_var<int> len) {
 	
 	packet_t p = runtime::malloc(MTU_SIZE);
+	//packet_t p = runtime::reuse_mtu_buffer;
 	builder::dyn_var<int> ret_len = 0;
 	builder::dyn_var<int*> ret_len_ptr = &ret_len;
 			

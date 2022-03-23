@@ -34,6 +34,7 @@ builder::dyn_var<int> interface_module::send_impl(builder::dyn_var<connection_t*
 void interface_module::run_ingress_step(void) {
 	builder::dyn_var<int> len;
 	builder::dyn_var<int*> len_addr = &len;
+
 	packet_t p = runtime::poll_packet(len_addr, 0);
 
 	if (p != 0) 

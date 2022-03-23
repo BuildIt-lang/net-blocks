@@ -50,6 +50,7 @@ void nb__ipc_init(const char* sock_path, int mode) {
 	}
 }
 #define IPC_MTU (1024)
+char nb__reuse_mtu_buffer[IPC_MTU];
 char* nb__poll_packet(int* size, int headroom) {
 	int len;
 	static char temp_buf[IPC_MTU];

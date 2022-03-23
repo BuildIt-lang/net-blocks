@@ -23,6 +23,7 @@ builder::dyn_var<void* (int)> retrieve_connection("nb__retrieve_connection");
 
 builder::dyn_var<char*> my_host_id("nb__my_host_id");
 builder::dyn_var<void (void*)> debug_packet("nb__debug_packet");
+builder::dyn_var<char*> reuse_mtu_buffer("nb__reuse_mtu_buffer");
 }
 }
 
