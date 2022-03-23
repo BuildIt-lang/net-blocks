@@ -18,7 +18,7 @@ public:
 
 	void init_module(void);
 	
-	builder::dyn_var<connection_t*> establish_impl(builder::dyn_var<unsigned int>, builder::dyn_var<unsigned int>, 
+	builder::dyn_var<connection_t*> establish_impl(builder::dyn_var<char*>, builder::dyn_var<unsigned int>, 
 		builder::dyn_var<unsigned int> ca, callback_t);
 
 	void destablish_impl(builder::dyn_var<connection_t*>);

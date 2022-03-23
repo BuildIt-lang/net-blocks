@@ -5,7 +5,7 @@ namespace net_blocks {
 void payload_module::init_module(void) {	
 	// This should always be the last member
 	// TODO: introduce groups and add this member in the last group
-	net_packet.add_member("payload", new generic_integer_member<char>((int)generic_integer_member<char>::flags::aligned));
+	net_packet.add_member("payload", new generic_integer_member<char>((int)member_flags::aligned), 3);
 	framework::instance.register_module(this);	
 }
 

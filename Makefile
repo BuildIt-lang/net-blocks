@@ -8,7 +8,6 @@ TEST_DIR?=$(BASE_DIR)/test
 INCLUDE_DIR=$(BASE_DIR)/include
 BUILDIT_DIR?=$(BASE_DIR)/buildit
 
-
 INCLUDES=$(wildcard $(INCLUDE_DIR)/*.h) $(wildcard $(INCLUDE_DIR)/*/*.h) $(wildcard $(BUILDIT_DIR)/include/*.h) $(wildcard $(BUILDIT_DIR)/include/*/*.h)
 
 INCLUDE_FLAG=-I$(INCLUDE_DIR) -I$(BUILDIT_DIR)/include
@@ -22,6 +21,11 @@ $(shell mkdir -p $(BUILD_DIR))
 $(shell mkdir -p $(BUILD_DIR)/core)
 $(shell mkdir -p $(BUILD_DIR)/impls)
 $(shell mkdir -p $(BUILD_DIR)/modules)
+$(shell mkdir -p $(BUILD_DIR)/runtime)
+$(shell mkdir -p $(BUILD_DIR)/test)
+$(shell mkdir -p $(BUILD_DIR)/test/simple_network_test)
+$(shell mkdir -p $(BUILD_DIR)/test/simple_test)
+$(shell mkdir -p $(BUILD_DIR)/runtime/mlx5_impl)
 
 BUILDIT_LIBRARY_NAME=buildit
 BUILDIT_LIBRARY_PATH=$(BUILDIT_DIR)/build
@@ -74,11 +78,41 @@ $(BUILD_DIR)/impls/simple: $(BUILD_DIR)/impls/simple.o $(LIBRARY) dep
 	$(CXX) -o $@ $< $(LINKER_FLAGS)
 
 
-.PHONY: simple_test
-simple_test: executables
+# Runtime objs
+$(BUILD_DIR)/runtime/nb_simple.o: $(BUILD_DIR)/impls/simple $(RUNTIME_DIR)/nb_runtime.h
 	$(BUILD_DIR)/impls/simple > $(SCRATCH_DIR)/nb_simple.c
-	$(CC) $(SCRATCH_DIR)/nb_simple.c $(RUNTIME_DIR)/nb_runtime.c $(RUNTIME_DIR)/nb_ipc_transport.c $(TEST_DIR)/test_simple/server.c -I $(RUNTIME_DIR) -o $(BUILD_DIR)/test_simple_server -g
-	$(CC) $(SCRATCH_DIR)/nb_simple.c $(RUNTIME_DIR)/nb_runtime.c $(RUNTIME_DIR)/nb_ipc_transport.c $(TEST_DIR)/test_simple/client.c -I $(RUNTIME_DIR) -o $(BUILD_DIR)/test_simple_client -g
-	-rm /tmp/ipc_socket
+	$(CC) $(SCRATCH_DIR)/nb_simple.c -o $(BUILD_DIR)/runtime/nb_simple.o -c -I $(RUNTIME_DIR)
+	
+
+$(BUILD_DIR)/runtime/nb_runtime.o: $(RUNTIME_DIR)/nb_runtime.c $(RUNTIME_DIR)/nb_runtime.h
+	$(CC) -o $@ $< -c	
+
+
+$(BUILD_DIR)/runtime/nb_mlx5_transport.o: $(RUNTIME_DIR)/nb_mlx5_transport.cc $(RUNTIME_DIR)/nb_runtime.h
+	$(CXX) -c $(RUNTIME_DIR)/nb_mlx5_transport.cc -o $(BUILD_DIR)/runtime/nb_mlx5_transport.o -I $(RUNTIME_DIR)/mlx5_impl/
+
+.PRECIOUS: $(BUILD_DIR)/runtime/mlx5_impl/%.o
+$(BUILD_DIR)/runtime/mlx5_impl/%.o: $(RUNTIME_DIR)/mlx5_impl/%.cc
+	$(CXX) $< -o $@ -c -I $(RUNTIME_DIR)/mlx5_impl/
+
+mlx5_runtime: $(BUILD_DIR)/runtime/nb_mlx5_transport.o $(BUILD_DIR)/runtime/mlx5_impl/transport.o $(BUILD_DIR)/runtime/mlx5_impl/halloc.o
+		
+.PHONY: simple_network_test
+simple_network_test: mlx5_runtime $(BUILD_DIR)/runtime/nb_simple.o $(BUILD_DIR)/runtime/nb_runtime.o
+	$(CC) -c $(TEST_DIR)/test_mlx5_simple/server.c -o $(BUILD_DIR)/test/simple_network_test/server.o -I $(RUNTIME_DIR)
+	$(CC) -c $(TEST_DIR)/test_mlx5_simple/client.c -o $(BUILD_DIR)/test/simple_network_test/client.o -I $(RUNTIME_DIR)
+	$(CXX) $(BUILD_DIR)/runtime/nb_mlx5_transport.o $(BUILD_DIR)/runtime/mlx5_impl/halloc.o $(BUILD_DIR)/runtime/mlx5_impl/transport.o $(BUILD_DIR)/runtime/nb_runtime.o $(BUILD_DIR)/runtime/nb_simple.o $(BUILD_DIR)/test/simple_network_test/server.o -o $(BUILD_DIR)/test/network_simple_server -libverbs
+	$(CXX) $(BUILD_DIR)/runtime/nb_mlx5_transport.o $(BUILD_DIR)/runtime/mlx5_impl/halloc.o $(BUILD_DIR)/runtime/mlx5_impl/transport.o $(BUILD_DIR)/runtime/nb_runtime.o $(BUILD_DIR)/runtime/nb_simple.o $(BUILD_DIR)/test/simple_network_test/client.o -o $(BUILD_DIR)/test/network_simple_client -libverbs
+
+	
+.PHONY: simple_test
+simple_test: executables $(BUILD_DIR)/runtime/nb_simple.o $(BUILD_DIR)/runtime/nb_runtime.o
+	$(CC) -c $(TEST_DIR)/test_simple/server.c -o $(BUILD_DIR)/test/simple_test/server.o -I $(RUNTIME_DIR)
+	$(CC) -c $(TEST_DIR)/test_simple/client.c -o $(BUILD_DIR)/test/simple_test/client.o -I $(RUNTIME_DIR)
+	$(CC) -c $(RUNTIME_DIR)/nb_ipc_transport.c -o $(BUILD_DIR)/runtime/nb_ipc_transport.o -I $(RUNTIME_DIR)
+	$(CC) $(BUILD_DIR)/runtime/nb_runtime.o $(BUILD_DIR)/runtime/nb_simple.o $(BUILD_DIR)/test/simple_test/server.o $(BUILD_DIR)/runtime/nb_ipc_transport.o -o $(BUILD_DIR)/test/simple_server
+	$(CC) $(BUILD_DIR)/runtime/nb_runtime.o $(BUILD_DIR)/runtime/nb_simple.o $(BUILD_DIR)/test/simple_test/client.o $(BUILD_DIR)/runtime/nb_ipc_transport.o -o $(BUILD_DIR)/test/simple_client
+
+
 clean:
 	rm -rf $(BUILD_DIR)

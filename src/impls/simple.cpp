@@ -12,7 +12,7 @@ static void generate_headers(void) {
 	std::cout << "#include \"nb_runtime.h\"" << std::endl;
 }
 
-static builder::dyn_var<connection_t*> establish_wrapper(builder::dyn_var<unsigned int> h, builder::dyn_var<unsigned int> app, 
+static builder::dyn_var<connection_t*> establish_wrapper(builder::dyn_var<char*> h, builder::dyn_var<unsigned int> app, 
 	builder::dyn_var<unsigned int> sa, callback_t c) {
 	return interface_module::instance.establish_impl(h, app, sa, c);
 }
@@ -65,6 +65,8 @@ int main(int argc, char* argv[]) {
 
 	network_module m3;
 	m3.init_module();
+	
+	net_packet.fix_layout();
 
 	generate_headers();
 	generate_establish();		

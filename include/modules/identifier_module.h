@@ -5,13 +5,15 @@
 
 namespace net_blocks {
 
+#define HOST_IDENTIFIER_LEN (6)
+
 class identifier_module: public module {
 public:
 	void init_module(void);
 	
 	// Various path hooking routines
 	module::hook_status hook_establish(builder::dyn_var<connection_t*> c, 
-		builder::dyn_var<unsigned int> h, builder::dyn_var<unsigned int> a, builder::dyn_var<unsigned int> sa);
+		builder::dyn_var<char*> h, builder::dyn_var<unsigned int> a, builder::dyn_var<unsigned int> sa);
 	
 	module::hook_status hook_destablish(builder::dyn_var<connection_t*> c);	
 

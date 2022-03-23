@@ -85,7 +85,7 @@ void nb__main_loop_step(void) {
 }
 
 // Set this at init 
-unsigned nb__my_host_id = 0;
+char nb__my_host_id[6] = {0};
 
 
 

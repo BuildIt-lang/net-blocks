@@ -3,6 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __cplusplus 
+extern "C" {
+#endif
+
+
 #define QUEUE_EVENT_READ_READY (0)
 
 #define MAX_DATA_QUEUE_ELEMS (512)
@@ -16,7 +21,7 @@ struct data_queue_t {
 // This is currently hand written
 // TODO: Generate this from the dynamic_object
 struct connection_t {
-	unsigned int dst_host_id;
+	char dst_host_id[6];
 	unsigned int dst_app_id;
 	unsigned int src_app_id;
 	
@@ -37,10 +42,10 @@ void nb__add_connection(nb__connection_t*, unsigned sa);
 void nb__delete_connection(unsigned sa);
 nb__connection_t* nb__retrieve_connection(unsigned sa);
 
-extern unsigned int nb__my_host_id;
+extern char nb__my_host_id[];
 
 
-char* nb__poll_packet(int*);
+char* nb__poll_packet(int*, int);
 int nb__send_packet(char*, int);
 
 void nb__ipc_init(const char* sock_path, int mode);
@@ -52,7 +57,13 @@ int nb__send (nb__connection_t* arg0, char* arg1, int arg2);
 void nb__destablish (nb__connection_t* arg0);
 int nb__read(nb__connection_t*, char*, int);
 
-nb__connection_t* nb__establish (unsigned int arg0, unsigned int arg1, unsigned int arg2, void (*arg3)(int, nb__connection_t*));
+nb__connection_t* nb__establish (char* arg0, unsigned int arg1, unsigned int arg2, void (*arg3)(int, nb__connection_t*));
 
 void nb__debug_packet(char* p);
+
+void nb__mlx5_init(void);
+#ifdef __cplusplus 
+}
+#endif
+
 #endif

@@ -11,7 +11,7 @@ void framework::register_module(module *m) {
 	m_registered_modules.push_back(m);
 }
 // Implementations for various paths	
-builder::dyn_var<connection_t*> framework::run_establish_path(builder::dyn_var<unsigned int> host_id, builder::dyn_var<unsigned int> app_id, 
+builder::dyn_var<connection_t*> framework::run_establish_path(builder::dyn_var<char*> host_id, builder::dyn_var<unsigned int> app_id, 
 	builder::dyn_var<unsigned int> src_app_id) {
 	// Establish a new connection object
 	builder::dyn_var<connection_t*> conn = runtime::malloc(runtime::connection_t_size());

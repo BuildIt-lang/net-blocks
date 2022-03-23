@@ -24,6 +24,8 @@ void nb__ipc_init(const char* sock_path, int mode) {
 			exit(-1);
 		}
 	} else {
+		// Delete any stale sockets
+		unlink(sock_path);
 		// Bind mode
 		struct sockaddr_un addr;
 		int ipc_fd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
@@ -48,14 +50,15 @@ void nb__ipc_init(const char* sock_path, int mode) {
 	}
 }
 #define IPC_MTU (1024)
-char* nb__poll_packet(int* size) {
+char* nb__poll_packet(int* size, int headroom) {
 	int len;
 	static char temp_buf[IPC_MTU];
 	len = (int) read(ipc_socket, temp_buf, IPC_MTU);
 	*size = 0;
-	if (len > 0) {
-		char* buf = malloc(IPC_MTU);
-		memcpy(buf, temp_buf, IPC_MTU);
+	if (len > 0) {		
+		//nb__debug_packet(temp_buf);
+		char* buf = malloc(IPC_MTU + headroom);
+		memcpy(buf + headroom, temp_buf, IPC_MTU);
 		*size = len;
 		return buf;
 	}
@@ -63,5 +66,6 @@ char* nb__poll_packet(int* size) {
 }
 int nb__send_packet(char* buff, int len) {
 	//nb__debug_packet(buff);
-	return (int) write(ipc_socket, buff, len);	
+	int ret = write(ipc_socket, buff, len);
+	return ret;
 }
