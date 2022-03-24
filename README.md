@@ -1,6 +1,6 @@
 # Net-Blocks
 
-Net-Blocks is a modular staged network protocol toolkit that uses staged programming to generate efficient protocols and their implementations. Net-Blocks creates simple modules with individual network related features such as flow-identifiers, checksum, reliability, in-order delivery among others which the users can combine and parameterize to generate their very own protocol stack. 
+Net-Blocks is a modular staged network protocol toolkit that uses [BuildIt](https://buildit.so) to generate efficient protocols and their implementations. Net-Blocks creates simple modules with individual network related features such as flow-identifiers, checksum, reliability, in-order delivery among others which the users can combine and parameterize to generate their very own protocol stack. 
 
 Net-Blocks is currently WIP and new modules/features are being added
 
