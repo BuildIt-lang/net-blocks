@@ -5,6 +5,7 @@
 #include "builder/builder_context.h"
 #include "blocks/c_code_generator.h"
 #include "blocks/rce.h"
+#include <fstream>
 
 using namespace net_blocks;
 
@@ -53,8 +54,19 @@ static void generate_ingress_step(void) {
 	block::c_code_generator::generate_code(ast, std::cout);	
 }
 
+static void generate_connection_layout(std::string fname) {
+	std::ofstream hoss(fname);
+	hoss << "#pragma once" << std::endl;
+	hoss << "#include \"nb_data_queue.h\"" << std::endl;
+	conn_layout.generate_struct_decl(hoss, "nb__connection_t");
+	hoss.close();
+}
 
 int main(int argc, char* argv[]) {
+	if (argc < 2) {
+		std::cerr << "Usage: " << argv[0] << ": <gen header file>" << std::endl;
+		return -1;	
+	}	
 	interface_module::instance.init_module();
 
 	identifier_module m1;
@@ -67,8 +79,10 @@ int main(int argc, char* argv[]) {
 	m3.init_module();
 	
 	net_packet.fix_layout();
-
+	
+	generate_connection_layout(argv[1]);
 	generate_headers();
+
 	generate_establish();		
 	generate_destablish();
 	generate_send();

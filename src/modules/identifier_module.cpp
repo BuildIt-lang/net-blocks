@@ -3,12 +3,14 @@
 #include <arpa/inet.h>
 namespace net_blocks {
 
-void identifier_module::init_module(void) {
-	conn_layout.register_member("dst_host_id");	
-	conn_layout.register_member("dst_app_id");
-	conn_layout.register_member("src_app_id");
+const char data_queue_t_name[] = "nb__data_queue_t";
 
-	conn_layout.register_member("input_queue");
+void identifier_module::init_module(void) {
+	conn_layout.register_member<builder::dyn_var<char[HOST_IDENTIFIER_LEN]>>("dst_host_id");	
+	conn_layout.register_member<builder::dyn_var<unsigned int>>("dst_app_id");
+	conn_layout.register_member<builder::dyn_var<unsigned int>>("src_app_id");
+
+	conn_layout.register_member<builder::dyn_var<data_queue_t*>>("input_queue");
 
 	net_packet.add_member("dst_host_id", new byte_array_member<HOST_IDENTIFIER_LEN>((int)member_flags::aligned), 0);
 	net_packet.add_member("src_host_id", new byte_array_member<HOST_IDENTIFIER_LEN>((int)member_flags::aligned), 0);

@@ -2,7 +2,7 @@
 #define NB_RUNTIME_H
 #include <stdlib.h>
 #include <string.h>
-
+#include "gen_headers.h"
 #ifdef __cplusplus 
 extern "C" {
 #endif
@@ -10,26 +10,6 @@ extern "C" {
 
 #define QUEUE_EVENT_READ_READY (0)
 
-#define MAX_DATA_QUEUE_ELEMS (512)
-
-struct data_queue_t {
-	char* data_queue_elems[MAX_DATA_QUEUE_ELEMS];
-	int data_queue_elems_size[MAX_DATA_QUEUE_ELEMS];
-	int current_elems;	
-};
-
-// This is currently hand written
-// TODO: Generate this from the dynamic_object
-struct connection_t {
-	char dst_host_id[6];
-	unsigned int dst_app_id;
-	unsigned int src_app_id;
-	
-	struct data_queue_t* input_queue;
-	void (*callback_f)(int, struct connection_t*);
-};
-
-typedef struct connection_t nb__connection_t;
 static int nb__connection_t_size(void) {
 	return sizeof(nb__connection_t);
 }

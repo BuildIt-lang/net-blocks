@@ -7,6 +7,10 @@ namespace net_blocks {
 
 #define HOST_IDENTIFIER_LEN (6)
 
+extern const char data_queue_t_name[];
+
+using data_queue_t = builder::name<data_queue_t_name>;
+
 class identifier_module: public module {
 public:
 	void init_module(void);
