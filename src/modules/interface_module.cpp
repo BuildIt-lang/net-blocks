@@ -42,5 +42,8 @@ void interface_module::run_ingress_step(void) {
 
 }
 
+void interface_module::net_init_impl(void) {
+	framework::instance.run_net_init_path();
+}
 
 }

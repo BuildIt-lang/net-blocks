@@ -27,6 +27,7 @@ public:
 	void run_destablish_path(builder::dyn_var<connection_t*>);
 	builder::dyn_var<int> run_send_path(builder::dyn_var<connection_t*>, builder::dyn_var<char*>, builder::dyn_var<int>);
 	void run_ingress_path(packet_t);
+	void run_net_init_path(void);
 };
 
 

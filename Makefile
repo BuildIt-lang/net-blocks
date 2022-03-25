@@ -102,7 +102,7 @@ $(BUILD_DIR)/runtime/nb_mlx5_transport.o: $(RUNTIME_DIR)/nb_mlx5_transport.cc $(
 	$(CXX) $(RCFLAGS) -c $(RUNTIME_DIR)/nb_mlx5_transport.cc -o $(BUILD_DIR)/runtime/nb_mlx5_transport.o -I $(RUNTIME_DIR)/mlx5_impl/ -I $(SCRATCH_DIR) -I $(RUNTIME_DIR)
 
 .PRECIOUS: $(BUILD_DIR)/runtime/mlx5_impl/%.o
-$(BUILD_DIR)/runtime/mlx5_impl/%.o: $(RUNTIME_DIR)/mlx5_impl/%.cc
+$(BUILD_DIR)/runtime/mlx5_impl/%.o: $(RUNTIME_DIR)/mlx5_impl/%.cc $(wildcard $(RUNTIME_DIR)/mlx5_impl/*)
 	$(CXX) $(RCFLAGS) $< -o $@ -c -I $(RUNTIME_DIR)/mlx5_impl/ -I $(SCRATCH_DIR)
 
 mlx5_runtime: $(BUILD_DIR)/runtime/nb_mlx5_transport.o $(BUILD_DIR)/runtime/mlx5_impl/transport.o $(BUILD_DIR)/runtime/mlx5_impl/halloc.o
@@ -123,6 +123,11 @@ simple_test: executables $(BUILD_DIR)/runtime/nb_simple.o $(BUILD_DIR)/runtime/n
 	$(CC) $(BUILD_DIR)/runtime/nb_runtime_simple.o $(BUILD_DIR)/runtime/nb_simple.o $(BUILD_DIR)/test/simple_test/server.o $(BUILD_DIR)/runtime/nb_ipc_transport.o -o $(BUILD_DIR)/test/simple_server
 	$(CC) $(BUILD_DIR)/runtime/nb_runtime_simple.o $(BUILD_DIR)/runtime/nb_simple.o $(BUILD_DIR)/test/simple_test/client.o $(BUILD_DIR)/runtime/nb_ipc_transport.o -o $(BUILD_DIR)/test/simple_client
 
+simple_test_run: simple_test
+	$(BUILD_DIR)/test/simple_server &
+	sleep 1
+	$(BUILD_DIR)/test/simple_client
+	pkill -9 simple_server || true
 
 clean:
 	rm -rf $(BUILD_DIR)

@@ -34,6 +34,7 @@
 static void rt_assert(int cond, std::string err) {
 	if (!cond) {
 		std::cerr << err << "\n";
+		exit(-1);
 	}	
 }
 static std::string ibdev2netdev(std::string ibdev_name) {

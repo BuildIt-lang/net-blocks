@@ -36,6 +36,11 @@ public:
 		return hook_status::HOOK_CONTINUE;	
 	}
 
+	// This hook doesn't require a return value because all modules 
+	// need to be initialized
+	virtual void hook_net_init(void) {
+		return;		
+	}
 	
 	// Enable virtual inheritance
 	virtual ~module();

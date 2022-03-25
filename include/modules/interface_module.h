@@ -28,6 +28,8 @@ public:
 	// This function tries to poll a packet and if it finds one, 
 	// runs the ingress path
 	void run_ingress_step(void);
+
+	void net_init_impl(void);
 };
 
 }

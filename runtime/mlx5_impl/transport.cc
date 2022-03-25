@@ -67,6 +67,7 @@ Transport::Transport(short udp_port) {
 	send_cq = ibv_exp_create_cq(resolved_context, 128, nullptr, nullptr, 0, &cq_init_attr);
 		
 	rt_assert(send_cq != nullptr, "Error creating CQ");	
+	// This recv_cq_simple is a dummy recv_cq we create for the send qp. This will never be used
 	recv_cq_simple = ibv_exp_create_cq(resolved_context, 8, nullptr, nullptr, 0, &cq_init_attr);
 	rt_assert(recv_cq_simple != nullptr, "Error creating recv cq");
 	
@@ -82,7 +83,7 @@ Transport::Transport(short udp_port) {
 	qp_init_attr.cap.max_send_sge = 2; // This might need to adjusted for larger messages or for scatter/gather
 	qp_init_attr.cap.max_recv_wr = 0;
 	qp_init_attr.cap.max_recv_sge = 0;
-	qp_init_attr.cap.max_inline_data = 0;
+	qp_init_attr.cap.max_inline_data = MAX_INLINE_DATA_SIZE;
 	qp_init_attr.exp_create_flags = IBV_EXP_QP_CREATE_IGNORE_SQ_OVERFLOW;
 	qp_init_attr.qp_type = IBV_QPT_RAW_PACKET; // This QP type allows us to write arbitrary byts to the Network
 	
@@ -184,7 +185,7 @@ Transport::Transport(short udp_port) {
 	rx_hash_conf.rx_hash_function = IBV_EXP_RX_HASH_FUNC_TOEPLITZ;
 	rx_hash_conf.rx_hash_key_len = TOEPLITZ_RX_HASH_KEY_LEN;
 	rx_hash_conf.rx_hash_key = toeplitz_key;
-	rx_hash_conf.rx_hash_fields_mask = IBV_EXP_RX_HASH_DST_PORT_UDP;
+	rx_hash_conf.rx_hash_fields_mask = 0; //IBV_EXP_RX_HASH_DST_PORT_UDP;
 	rx_hash_conf.rwq_ind_tbl = ind_tbl;	
 
 
@@ -320,6 +321,8 @@ void Transport::send_message(struct msgbuffer* send_buffer) {
 	wr.next = nullptr;
 	wr.sg_list = &sgl;
 	wr.send_flags = 0;
+	if (send_buffer->length < MAX_INLINE_DATA_SIZE + MLX5_ETH_INLINE_HEADER_SIZE)
+		wr.send_flags |= IBV_SEND_INLINE;
 	wr.opcode = IBV_WR_SEND;
 	
 	sgl.addr = reinterpret_cast<uint64_t>(send_buffer->buffer);

@@ -11,7 +11,7 @@
 //#define IBV_FRAME_SIZE_LOG (13ull)
 #define IBV_FRAME_SIZE_LOG (10ull)
 #define IBV_FRAME_SIZE (1ull << IBV_FRAME_SIZE_LOG)
-
+#define MAX_INLINE_DATA_SIZE (972)
 struct msgbuffer {
 	char* buffer;
 	int length;

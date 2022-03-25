@@ -25,6 +25,8 @@ public:
 		builder::dyn_var<char*> buff, builder::dyn_var<unsigned int> len, builder::dyn_var<int*> ret_len);
 
 	module::hook_status hook_ingress(packet_t);
+
+	void hook_net_init(void);
 };
 
 }

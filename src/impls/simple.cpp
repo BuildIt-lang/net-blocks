@@ -54,11 +54,21 @@ static void generate_ingress_step(void) {
 	block::c_code_generator::generate_code(ast, std::cout);	
 }
 
+static void net_init_wrapper(void) {
+	interface_module::instance.net_init_impl();
+}
+static void generate_net_init(void) {
+	auto ast = builder::builder_context().extract_function_ast(net_init_wrapper, "nb__net_init");
+	block::eliminate_redundant_vars(ast);
+	block::c_code_generator::generate_code(ast, std::cout);	
+}
+
 static void generate_connection_layout(std::string fname) {
 	std::ofstream hoss(fname);
 	hoss << "#pragma once" << std::endl;
 	hoss << "#include \"nb_data_queue.h\"" << std::endl;
 	conn_layout.generate_struct_decl(hoss, "nb__connection_t");
+	net_state.generate_struct_decl(hoss, "nb__net_state_t");
 	hoss.close();
 }
 
@@ -83,6 +93,7 @@ int main(int argc, char* argv[]) {
 	generate_connection_layout(argv[1]);
 	generate_headers();
 
+	generate_net_init();
 	generate_establish();		
 	generate_destablish();
 	generate_send();

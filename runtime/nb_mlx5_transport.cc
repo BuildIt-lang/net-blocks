@@ -27,10 +27,19 @@ static msgbuffer* get_next_send_buffer(void) {
 	idx = idx % 512;
 	return &(transport->send_buffers[idx]);
 }
+char* nb__request_send_buffer(void) {
+	msgbuffer* buffer = get_next_send_buffer();
+	return buffer->buffer;
+}
+void* nb__return_send_buffer(char*) {
+	// This implementation is empty
+	// We have enough buffers and we assume that a 
+	// buffer is returned before it is used again
+}
 
 int nb__send_packet(char* buff, int len) {
-	msgbuffer *buffer = get_next_send_buffer();		
-	memcpy(buffer->buffer, buff, len);
+	int buffer_index = (buff - transport->main_send_buffer) / (MLX5_MTU);
+	msgbuffer *buffer = &(transport->send_buffers[buffer_index]);
 	buffer->length = len;
 	transport->send_message(buffer);	
 }

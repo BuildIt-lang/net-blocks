@@ -6,6 +6,7 @@ namespace net_blocks {
 const char connection_t_name[] = CONNECTION_T_STR;
 dynamic_object conn_layout;
 dynamic_object init_params;
+dynamic_object net_state;
 
 int dynamic_object::dynamic_object_counter = 0;
 void dynamic_object::generate_struct_decl(std::ostream &oss, std::string struct_name) {

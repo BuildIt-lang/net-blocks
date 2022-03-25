@@ -14,7 +14,8 @@ void framework::register_module(module *m) {
 builder::dyn_var<connection_t*> framework::run_establish_path(builder::dyn_var<char*> host_id, builder::dyn_var<unsigned int> app_id, 
 	builder::dyn_var<unsigned int> src_app_id) {
 	// Establish a new connection object
-	builder::dyn_var<connection_t*> conn = runtime::malloc(runtime::connection_t_size());
+	builder::dyn_var<connection_t*> conn;
+	conn = runtime::malloc(runtime::size_of(conn[0]));
 
 	for (builder::static_var<unsigned int> i = 0; i < m_registered_modules.size(); i++) {
 		builder::static_var<int> s = (int)m_registered_modules[i]->hook_establish(conn, host_id, app_id, src_app_id);
@@ -36,8 +37,7 @@ void framework::run_destablish_path(builder::dyn_var<connection_t*> c) {
 builder::dyn_var<int> framework::run_send_path(builder::dyn_var<connection_t*> conn, 
 	builder::dyn_var<char*> buff, builder::dyn_var<int> len) {
 	
-	packet_t p = runtime::malloc(MTU_SIZE);
-	//packet_t p = runtime::reuse_mtu_buffer;
+	packet_t p = runtime::request_send_buffer();
 	builder::dyn_var<int> ret_len = 0;
 	builder::dyn_var<int*> ret_len_ptr = &ret_len;
 			
@@ -56,6 +56,14 @@ void framework::run_ingress_path(packet_t p) {
 			break;
 	}	
 }
+
+void framework::run_net_init_path(void) {
+	runtime::net_state_obj = runtime::malloc(runtime::size_of(runtime::net_state_obj));
+	for (builder::static_var<unsigned int> i = 0; i < m_registered_modules.size(); i++) {
+		m_registered_modules[i]->hook_net_init();
+	}
+}
+
 // Definition for the main net_packet dynamic layout
 dynamic_layout net_packet;
 

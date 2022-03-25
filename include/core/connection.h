@@ -41,6 +41,7 @@ struct dynamic_object {
 
 extern dynamic_object conn_layout;
 extern dynamic_object init_params;
+extern dynamic_object net_state;
 
 }
 
