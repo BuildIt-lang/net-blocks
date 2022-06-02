@@ -31,15 +31,17 @@ static void callback(int event, nb__connection_t * c) {
 		if (diff < 200) 
 			logs[diff]++;	
 
-		if (total > 10000)
+		if (total > 100000)
 			running = 0;
 		last = get_time_in_ns();
-		nb__send(c, msg, sizeof(msg));
-		
+		nb__send(c, msg, sizeof(msg));	
 	}
 }
 
+extern int nb__mlx5_simulate_packet_drop;
 int main(int argc, char* argv[]) {
+	srand(time(NULL));
+	//nb__mlx5_simulate_packet_drop = 1;
 	nb__mlx5_init();
 	nb__net_init();
 	memcpy(nb__my_host_id, client_id, 6);
@@ -47,16 +49,20 @@ int main(int argc, char* argv[]) {
 	nb__connection_t * conn = nb__establish(server_id, 8080, 8081, callback);
 
 	last = get_time_in_ns();	
+	unsigned long long start = last;
 	
 	nb__send(conn, msg, sizeof(msg));
 
 	while (running) {
 		nb__main_loop_step();
 	}
-	nb__destablish(conn);
 
+	unsigned long long end = get_time_in_ns();
+	printf("Time elapsed = %llu us\n", (end - start) / 1000);
+	nb__destablish(conn);
+	
 	for (int i = 0; i < 60; i++)
-		printf("%d.%d: %d\n", i/10, i%10, logs[i]);
+		printf("%d\n", logs[i]);
 	return 0;
 	
 }

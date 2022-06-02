@@ -40,10 +40,21 @@ public:
 	// need to be initialized
 	virtual void hook_net_init(void) {
 		return;		
-	}
-	
+	}	
+
+	// Dependency stuff
+	std::vector<module*> m_establish_depends;
+	std::vector<module*> m_destablish_depends;
+	std::vector<module*> m_send_depends;
+	std::vector<module*> m_ingress_depends;
+	bool mark_scheduled;
+		
 	// Enable virtual inheritance
 	virtual ~module();
+	int m_sequence;
+
+	virtual const char* get_module_name(void) { return "GenericUnamedModule"; }	
 };
+
 }
 #endif

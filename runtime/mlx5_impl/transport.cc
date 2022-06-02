@@ -272,7 +272,10 @@ Transport::Transport(short udp_port) {
 	
 	size_t per_size = (1ull << IBV_FRAME_SIZE_LOG) * (1ull << 9);
 	int lkey;
-	recv_buffer = (unsigned char*) alloc_shared(per_size * 8, &lkey, pd);
+	// We allocate extra 4k in the beginning	
+	// for first packet headroom
+	recv_buffer = (unsigned char*) alloc_shared(per_size * 8 + 4096, &lkey, pd);
+	recv_buffer = recv_buffer + 4096;
 	rt_assert(recv_buffer != nullptr, "Failed to allocate recv buffer");
 	memset(recv_buffer, 0, per_size * 8);
 	

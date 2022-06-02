@@ -4,7 +4,17 @@
 #include <sys/un.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 static int ipc_socket;
+
+#define IPC_MTU (1024)
+int nb__ipc_simulate_out_of_order = 0;
+int nb__ipc_simulate_packet_drop = 0;
+static char out_of_order_store[IPC_MTU];
+static int out_of_order_len = 0;
+#define OUT_OF_ORDER_CHANCE (5)
+#define PACKET_DROP_CHANCE (5)
 
 void nb__ipc_init(const char* sock_path, int mode) {
 	ipc_socket = socket(AF_UNIX, SOCK_SEQPACKET, 0);
@@ -23,6 +33,7 @@ void nb__ipc_init(const char* sock_path, int mode) {
 			fprintf(stderr, "Socket connect failed\n");
 			exit(-1);
 		}
+		fcntl(ipc_socket, F_SETFL, O_NONBLOCK);
 	} else {
 		// Delete any stale sockets
 		unlink(sock_path);
@@ -46,10 +57,18 @@ void nb__ipc_init(const char* sock_path, int mode) {
 			fprintf(stderr, "Socket accept failed\n");
 			exit(-1);
 		}
+		fcntl(ipc_socket, F_SETFL, O_NONBLOCK);
 		close(ipc_fd);
 	}
 }
-#define IPC_MTU (1024)
+void nb__ipc_deinit(void) {
+	// Send any ooo packet we are hoarding
+	if (out_of_order_len) {
+		int ret = write(ipc_socket, out_of_order_store, out_of_order_len);
+		out_of_order_len = 0;
+	}
+	close(ipc_socket);
+}
 char nb__reuse_mtu_buffer[IPC_MTU];
 char* nb__poll_packet(int* size, int headroom) {
 	int len;
@@ -57,7 +76,6 @@ char* nb__poll_packet(int* size, int headroom) {
 	len = (int) read(ipc_socket, temp_buf, IPC_MTU);
 	*size = 0;
 	if (len > 0) {		
-		//nb__debug_packet(temp_buf);
 		char* buf = malloc(IPC_MTU + headroom);
 		memcpy(buf + headroom, temp_buf, IPC_MTU);
 		*size = len;
@@ -66,8 +84,29 @@ char* nb__poll_packet(int* size, int headroom) {
 	return NULL;
 }
 int nb__send_packet(char* buff, int len) {
+	if (nb__ipc_simulate_packet_drop) {
+		int r = rand() % PACKET_DROP_CHANCE;
+		if (r == 0) {
+			//nb__debug_packet(buff);
+			return len;
+		}
+	}
+	// Don't try to out of order if we already have on pending
+	if (out_of_order_len == 0 && nb__ipc_simulate_out_of_order) {
+		int r = rand() % OUT_OF_ORDER_CHANCE;
+		if (r == 0) {
+			out_of_order_len = len;
+			memcpy(out_of_order_store, buff, len);
+			return len;
+		}
+	}
 	//nb__debug_packet(buff);
 	int ret = write(ipc_socket, buff, len);
+	// If there is a pending packet, send it now
+	if (out_of_order_len) {
+		int ret = write(ipc_socket, out_of_order_store, out_of_order_len);
+		out_of_order_len = 0;
+	}
 	return ret;
 }
 

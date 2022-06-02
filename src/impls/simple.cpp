@@ -1,7 +1,11 @@
 #include "modules/interface_module.h"
 #include "modules/identifier_module.h"
+#include "modules/inorder_module.h"
+#include "modules/reliable_module.h"
 #include "modules/payload_module.h"
 #include "modules/network_module.h"
+#include "modules/checksum_module.h"
+#include "modules/signaling_module.h"
 #include "builder/builder_context.h"
 #include "blocks/c_code_generator.h"
 #include "blocks/rce.h"
@@ -45,8 +49,8 @@ static void generate_send(void) {
 	block::c_code_generator::generate_code(ast, std::cout);	
 }
 
-static void run_ingress_step_wrapper(void) {
-	interface_module::instance.run_ingress_step();
+static void run_ingress_step_wrapper(builder::dyn_var<void*> p, builder::dyn_var<int> len) {
+	interface_module::instance.run_ingress_step(p, len);
 }
 static void generate_ingress_step(void) {
 	auto ast = builder::builder_context().extract_function_ast(run_ingress_step_wrapper, "nb__run_ingress_step");
@@ -79,16 +83,25 @@ int main(int argc, char* argv[]) {
 	}	
 	interface_module::instance.init_module();
 
-	identifier_module m1;
-	m1.init_module();	
+	payload_module::instance.init_module();
 
-	payload_module m2;
-	m2.init_module();
+	inorder_module::instance.configInorderStrategy(inorder_module::hold_forever);
+	//inorder_module::instance.configInorderStrategy(inorder_module::no_inorder);
+	inorder_module::instance.init_module();
 
-	network_module m3;
-	m3.init_module();
+	signaling_module::instance.init_module();	
+	
+	reliable_module::instance.init_module();
+
+	identifier_module::instance.configFlowIdentifier(identifier_module::flow_identifier_t::src_dst_identifier);
+	identifier_module::instance.init_module();	
+
+	checksum_module::instance.init_module();
+
+	network_module::instance.init_module();
 	
 	net_packet.fix_layout();
+	net_packet.print_layout(std::cerr);
 	
 	generate_connection_layout(argv[1]);
 	generate_headers();
@@ -98,5 +111,8 @@ int main(int argc, char* argv[]) {
 	generate_destablish();
 	generate_send();
 	generate_ingress_step();
+
+	reliable_module::instance.gen_timer_callback(std::cout);
+
 	return 0;
 }

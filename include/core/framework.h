@@ -8,12 +8,23 @@
 namespace net_blocks {
 
 extern dynamic_layout net_packet;
+extern int get_headroom(void);
+
 
 class module;
 
 class framework {
-private:
+public:
 	std::vector<module*> m_registered_modules;
+
+	std::vector<module*> m_establish_path;
+	std::vector<module*> m_destablish_path;
+	std::vector<module*> m_send_path;
+	std::vector<module*> m_ingress_path;
+	
+	void finalize_paths(void);
+	
+private:
 	// Singleton class framework
 	framework() = default;
 public:
@@ -22,7 +33,7 @@ public:
 	void register_module(module*);	
 	
 	// Implementations for various paths	
-	builder::dyn_var<connection_t*> run_establish_path(builder::dyn_var<char*>, builder::dyn_var<unsigned int>, 
+	void run_establish_path(builder::dyn_var<connection_t*>, builder::dyn_var<char*>, builder::dyn_var<unsigned int>, 
 		builder::dyn_var<unsigned int>);
 	void run_destablish_path(builder::dyn_var<connection_t*>);
 	builder::dyn_var<int> run_send_path(builder::dyn_var<connection_t*>, builder::dyn_var<char*>, builder::dyn_var<int>);

@@ -28,6 +28,15 @@ void dynamic_layout::fix_layout(void) {
 		}
 	}
 }
+void dynamic_layout::print_layout(std::ostream &oss) {
+	for (size_t g = 0; g < m_registered_members.size(); g++) {
+		for (size_t m = 0; m < m_registered_members[g].size(); m++) {
+			std::string m_name = m_registered_members[g][m];
+			oss << m_name << "\t:" << m_members_map[m_name]->get_size() << std::endl;
+		}
+		oss << "----------------" << std::endl;
+	}
+}
 dynamic_member* dynamic_layout::operator[] (std::string name) {
 	assert(m_members_map[name] != nullptr && "Requested member not found in layout");
 	return m_members_map[name];

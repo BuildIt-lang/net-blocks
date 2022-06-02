@@ -1,37 +1,38 @@
 #include "nb_runtime.h"
 #include <unistd.h>
 #include <stdio.h>
-#include <time.h>
+
 #define SERVER_MSG ("Hello from server")
 
-char client_id[] = {0x98, 0x03, 0x9b, 0x9b, 0x36, 0x33};
-char server_id[] = {0x98, 0x03, 0x9b, 0x9b, 0x2e, 0xeb};
+char client_id[] = {0, 0, 0, 0, 0, 2};
+char server_id[] = {0, 0, 0, 0, 0, 1};
 
-int running = 1;
 static void callback(int event, nb__connection_t * c) {
 	if (event == QUEUE_EVENT_ACCEPT_READY) {
 		// Share the callback function
 		nb__connection_t * s = nb__accept(c, callback);
-		printf("Received new connection\n");
-	} else if (event == QUEUE_EVENT_READ_READY) {
-		char buff[1025];
-		int len = nb__read(c, buff, 1024);
-		nb__send(c, buff, len);
+	} else if (event == QUEUE_EVENT_READ_READY) {	
+		char buff[65];
+		int len = nb__read(c, buff, 64);
+		printf("Received = %s", buff);	
 	}
 }
 
 int main(int argc, char* argv[]) {
-	srand(time(NULL));
-	nb__mlx5_init();
+	nb__ipc_init("/tmp/ipc_socket", 1);
+	printf("IPC initialized\n");
 	nb__net_init();
 	memcpy(nb__my_host_id, server_id, 6);
 
 	nb__connection_t * conn = nb__establish(nb__wildcard_host_identifier, 0, 8080, callback);
-	//nb__connection_t * conn = nb__establish(client_id, 8081, 8080, callback);
-
-	while (running) {
+	
+	int count = 0;
+	while (count < 50) {
 		nb__main_loop_step();
+		usleep(100 * 1000);
+		count++;
 	}
 	nb__destablish(conn);
+	nb__ipc_deinit();
 	return 0;
 }

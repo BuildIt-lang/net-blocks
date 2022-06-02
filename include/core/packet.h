@@ -111,6 +111,12 @@ struct dynamic_layout {
 	
 	int get_total_size(void);
 	void fix_layout(void);
+	void print_layout(std::ostream& oss);			
+
+	int group_start_offset(int i) {
+		auto m = m_members_map[m_registered_members[i][0]];
+		return m->get_offset() / byte_size;
+	}
 };
 
 }

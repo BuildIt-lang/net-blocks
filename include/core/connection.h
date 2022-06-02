@@ -3,6 +3,7 @@
 #include <map>
 #include "builder/dyn_var.h"
 #include "blocks/c_code_generator.h"
+#include "core/runtime.h"
 
 namespace net_blocks {
 
@@ -42,6 +43,13 @@ struct dynamic_object {
 extern dynamic_object conn_layout;
 extern dynamic_object init_params;
 extern dynamic_object net_state;
+
+
+// Helper function to access runtime state
+static inline builder::builder get_state(std::string name) {
+	return net_state.get(runtime::net_state_obj, name);
+}
+
 
 }
 

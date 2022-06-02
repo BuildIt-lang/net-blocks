@@ -16,6 +16,14 @@
 static Transport * transport;
 #define MLX5_MTU (1024)
 
+
+int nb__mlx5_simulate_out_of_order = 0;
+int nb__mlx5_simulate_packet_drop = 0;
+msgbuffer out_of_order_buffer;
+int out_of_order_stored = 0;
+#define OUT_OF_ORDER_CHANCE (5)
+#define PACKET_DROP_CHANCE (5)
+
 char nb__reuse_mtu_buffer[MLX5_MTU];
 
 void nb__mlx5_init(void) {
@@ -38,10 +46,24 @@ void* nb__return_send_buffer(char*) {
 }
 
 int nb__send_packet(char* buff, int len) {
+
+	if (nb__mlx5_simulate_packet_drop) {
+		int r = rand() % PACKET_DROP_CHANCE;
+		if (r == 0) {
+			return len;
+		}
+	}
+
 	int buffer_index = (buff - transport->main_send_buffer) / (MLX5_MTU);
 	msgbuffer *buffer = &(transport->send_buffers[buffer_index]);
-	buffer->length = len;
-	transport->send_message(buffer);	
+	// Retrieve key from original buffer
+	msgbuffer b;
+	b.buffer = buff;	
+	b.length = len;
+	b.lkey = buffer->lkey;
+
+	//nb__debug_packet(buff);
+	transport->send_message(&b);	
 }
 
 static int pending_recv = 0;
@@ -75,5 +97,8 @@ char* nb__poll_packet(int* size, int headroom) {
 		transport->wq_family->recv_burst(transport->wq, sge, 1);
 	}
 	*size = MLX5_MTU;
+	// Make space for non-transport headers
+	// Currently we are stealing from the previous packet
+	packet_addr = packet_addr - headroom;
 	return (char*)packet_addr;				
 }
