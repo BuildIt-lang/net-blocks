@@ -9,6 +9,7 @@ interface_module interface_module::instance;
 
 void interface_module::init_module(void) {	
 	conn_layout.register_member<callback_t>("callback_f");	
+	conn_layout.register_member<builder::dyn_var<void*>>("user_data");
 	net_packet.add_member("total_len", new generic_integer_member<int>((int)member_flags::aligned), 2);
 }
 

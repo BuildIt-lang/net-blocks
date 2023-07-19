@@ -79,6 +79,8 @@ char* nb__poll_packet(int* size, int headroom) {
 		char* buf = malloc(IPC_MTU + headroom);
 		memcpy(buf + headroom, temp_buf, IPC_MTU);
 		*size = len;
+		//nb__debug_packet(temp_buf);
+		
 		return buf;
 	}
 	return NULL;

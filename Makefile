@@ -28,7 +28,9 @@ $(shell mkdir -p $(BUILD_DIR)/test/simple_test)
 $(shell mkdir -p $(BUILD_DIR)/test/simple_test_accept)
 $(shell mkdir -p $(BUILD_DIR)/test/simple_test_inorder)
 $(shell mkdir -p $(BUILD_DIR)/test/simple_test_reliable)
+$(shell mkdir -p $(BUILD_DIR)/test/simple_test_posix)
 $(shell mkdir -p $(BUILD_DIR)/runtime/mlx5_impl)
+$(shell mkdir -p $(BUILD_DIR)/runtime/posix)
 
 BUILDIT_LIBRARY_NAME=buildit
 BUILDIT_LIBRARY_PATH=$(BUILDIT_DIR)/build
@@ -158,11 +160,26 @@ simple_test_reliable: executables $(SIMPLE_RUNTIME_OBJS)
 	$(CC) $(SIMPLE_RUNTIME_OBJS) $(BUILD_DIR)/test/simple_test_reliable/server.o $(BUILD_DIR)/runtime/nb_ipc_transport.o -o $(BUILD_DIR)/test/simple_reliable_server
 	$(CC) $(SIMPLE_RUNTIME_OBJS) $(BUILD_DIR)/test/simple_test_reliable/client.o $(BUILD_DIR)/runtime/nb_ipc_transport.o -o $(BUILD_DIR)/test/simple_reliable_client
 
+.PHONY: posix_interface
+posix_interface: $(SIMPLE_RUNTIME_OBJS)
+	$(CC) $(RCFLAGS) -c $(RUNTIME_DIR)/posix/src/network.c -o $(BUILD_DIR)/runtime/posix/network.o -I $(RUNTIME_DIR)/posix/include -I $(SCRATCH_DIR) -I $(RUNTIME_DIR)
+
+
+.PHONY: simple_test_posix
+simple_test_posix: posix_interface $(SIMPLE_RUNTIME_OBJS)
+	$(CC) $(RCFLAGS) -c $(TEST_DIR)/test_simple_posix/server.c -o $(BUILD_DIR)/test/simple_test_posix/server.o -I $(RUNTIME_DIR) -I $(SCRATCH_DIR) -I $(RUNTIME_DIR)/posix/include
+	$(CC) $(RCFLAGS) -c $(TEST_DIR)/test_simple_posix/client.c -o $(BUILD_DIR)/test/simple_test_posix/client.o -I $(RUNTIME_DIR) -I $(SCRATCH_DIR) -I $(RUNTIME_DIR)/posix/include
+	$(CC) $(RCFLAGS) -c $(RUNTIME_DIR)/nb_ipc_transport.c -o $(BUILD_DIR)/runtime/nb_ipc_transport.o -I $(RUNTIME_DIR) -I $(SCRATCH_DIR)
+	$(CC) $(SIMPLE_RUNTIME_OBJS) $(BUILD_DIR)/test/simple_test_posix/server.o $(BUILD_DIR)/runtime/nb_ipc_transport.o -o $(BUILD_DIR)/test/simple_posix_server $(BUILD_DIR)/runtime/posix/network.o
+	$(CC) $(SIMPLE_RUNTIME_OBJS) $(BUILD_DIR)/test/simple_test_posix/client.o $(BUILD_DIR)/runtime/nb_ipc_transport.o -o $(BUILD_DIR)/test/simple_posix_client $(BUILD_DIR)/runtime/posix/network.o
+	
+
 simple_test_run: simple_test
 	$(BUILD_DIR)/test/simple_server &
 	sleep 1
 	$(BUILD_DIR)/test/simple_client
 	pkill -9 simple_server || true
+
 
 clean:
 	rm -rf $(BUILD_DIR)

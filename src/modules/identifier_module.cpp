@@ -14,6 +14,10 @@ builder::dyn_var<char[HOST_IDENTIFIER_LEN]> wildcard_host_identifier("nb__wildca
 
 identifier_module identifier_module::instance;
 
+#define QUEUE_EVENT_ESTABLISHED (0)
+#define QUEUE_EVENT_READ_READY (1)
+#define QUEUE_EVENT_ACCEPT_READY (2)
+
 
 void identifier_module::init_module(void) {
 	conn_layout.register_member<builder::dyn_var<char[HOST_IDENTIFIER_LEN]>>("remote_host_id");	
@@ -199,6 +203,8 @@ module::hook_status identifier_module::hook_ingress(packet_t p) {
 	
 	if (c != 0) {
 		runtime::insert_accept_queue(conn_layout.get(c, "accept_queue"), src_app_id, src_host_id, p);
+		// At this point we will fire an accept event
+		conn_layout.get(c, "callback_f")(QUEUE_EVENT_ACCEPT_READY, c);
 	}
 	
 	// It is okay to drop the packet even if we have a wildcard match, the packet will be reprocessed again

@@ -58,6 +58,8 @@ nb__connection_t* nb__accept(nb__connection_t*, void (*)(int, nb__connection_t*)
 
 void nb__main_loop_step(void);
 
+void nb__set_user_data(nb__connection_t*, void* user_data);
+void* nb__get_user_data(nb__connection_t*);
 
 
 

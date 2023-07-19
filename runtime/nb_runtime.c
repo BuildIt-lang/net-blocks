@@ -101,9 +101,14 @@ static void nb__cycle_connections(void) {
 	for (i = 0; i < nb__net_state->num_conn; i++) {
 		nb__connection_t *c = nb__net_state->active_connections[i];
 		// First check for accepts
+
+		// We are changing the API to not fire an accept event _everytime_ 
+		// a new connection is ready
+/*
 		if (c->accept_queue->current_elems) {
 			c->callback_f(QUEUE_EVENT_ACCEPT_READY, c);
 		}
+*/
 		// Now check for read ready
 		if (c->input_queue->current_elems) {
 			c->callback_f(QUEUE_EVENT_READ_READY, c);
@@ -124,8 +129,7 @@ void nb__main_loop_step(void) {
 	void* p = &len;	
 
 	// Currently just processing one packet
-	// TODO: Get the headroom value from the generated system
-	p =  nb__poll_packet(&len, 20);
+	p =  nb__poll_packet(&len, nb__packet_headroom);
 	if (p != NULL)
 		nb__run_ingress_step(p, len);
 
@@ -159,4 +163,11 @@ unsigned long long nb__get_time_ms_now(void) {
 		nb__time_now = tv.tv_sec * 1000 + tv.tv_nsec / 1000000;
 	}
 	return nb__time_now;
+}
+
+void nb__set_user_data(nb__connection_t* c, void* user_data) {
+	c->user_data = user_data;
+}
+void* nb__get_user_data(nb__connection_t* c) {
+	return c->user_data;
 }

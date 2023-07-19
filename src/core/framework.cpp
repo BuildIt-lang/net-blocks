@@ -54,7 +54,7 @@ void framework::run_ingress_path(packet_t p) {
 }
 
 void framework::run_net_init_path(void) {
-	runtime::net_state_obj = runtime::malloc(runtime::size_of(runtime::net_state_obj));
+	runtime::net_state_obj = runtime::malloc(runtime::size_of(runtime::net_state_obj[0]));
 	for (builder::static_var<unsigned int> i = 0; i < m_registered_modules.size(); i++) {
 		m_registered_modules[i]->hook_net_init();
 	}

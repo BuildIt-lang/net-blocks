@@ -73,6 +73,7 @@ static void generate_connection_layout(std::string fname) {
 	hoss << "#include \"nb_data_queue.h\"" << std::endl;
 	conn_layout.generate_struct_decl(hoss, "nb__connection_t");
 	net_state.generate_struct_decl(hoss, "nb__net_state_t");
+	hoss << "static const int nb__packet_headroom = " << get_headroom() << ";" << std::endl;
 	hoss.close();
 }
 

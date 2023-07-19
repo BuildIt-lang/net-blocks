@@ -23,6 +23,7 @@ int main(int argc, char* argv[]) {
 	nb__net_init();
 	memcpy(nb__my_host_id, client_id, 6);
 
+
 	nb__connection_t * conn = nb__establish(server_id, 8080, 8081, callback);
 	
 	nb__send(conn, CLIENT_MSG, sizeof(CLIENT_MSG));
