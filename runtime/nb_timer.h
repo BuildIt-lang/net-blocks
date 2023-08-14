@@ -1,9 +1,6 @@
 #ifndef NB_TIMER_IMPL_H
 #define NB_TIMER_IMPL_H
 
-
-// Can define timers upto a second away
-#define MAX_TIMER_SLOTS (1000)
 #define MAX_TIMER_ALLOCS (1024)
 
 struct nb__timer_obj;
@@ -22,7 +19,6 @@ struct nb__timer_obj {
 
 typedef struct nb__timer_obj nb__timer;
 
-extern nb__timer* nb__timer_slots[MAX_TIMER_SLOTS];
 extern nb__timer nb__allocated_timers[MAX_TIMER_ALLOCS];
 extern nb__timer* nb__timer_free_list;
 

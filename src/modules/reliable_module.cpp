@@ -32,7 +32,7 @@ module::hook_status reliable_module::hook_establish(builder::dyn_var<connection_
 }
 
 
-static builder::dyn_var<void(timer_t*, void*, unsigned long long)> redelivery_timer_callback("nb__reliable_redelivery_timer_cb");
+static builder::dyn_var<void(timer_t*, void*, unsigned long long)> redelivery_timer_callback = builder::as_global("nb__reliable_redelivery_timer_cb");
 
 
 static void redelivery_cb(builder::dyn_var<runtime::timer_t*> t, builder::dyn_var<void*> param, 
@@ -75,10 +75,16 @@ module::hook_status reliable_module::hook_ingress(packet_t p) {
 	if (ack_seq != 0) {
 		builder::dyn_var<unsigned int> index = ack_seq % REDELIVERY_BUFFER_SIZE;
 		packet_t p_rem = conn_layout.get(c, "redelivery_buffer")[index];
-		builder::dyn_var<runtime::timer_t*> t = runtime::to_void_ptr(net_packet["redelivery_timer"]->get_integer(p_rem));
-		runtime::remove_timer(t);
-		runtime::return_timer(t);		
-		conn_layout.get(c, "redelivery_buffer")[index] = 0;		
+		// Remove the packet only if it hasn't been removed already. 
+		// Otherwise this is a dup ack
+		// dup acks are simply ignored for now
+		// TODO: implement retransmit on dup-ack
+		if (p_rem != 0) {
+			builder::dyn_var<runtime::timer_t*> t = runtime::to_void_ptr(net_packet["redelivery_timer"]->get_integer(p_rem));
+			runtime::remove_timer(t);
+			runtime::return_timer(t);		
+			conn_layout.get(c, "redelivery_buffer")[index] = 0;		
+		}
 		return module::hook_status::HOOK_DROP;
 	}	
 

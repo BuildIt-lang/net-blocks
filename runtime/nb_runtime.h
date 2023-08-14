@@ -4,6 +4,7 @@
 #include <string.h>
 #include "gen_headers.h"
 #include "nb_timer.h"
+#include <stdio.h>
 #ifdef __cplusplus 
 extern "C" {
 #endif
@@ -12,9 +13,17 @@ extern "C" {
 #define QUEUE_EVENT_READ_READY (1)
 #define QUEUE_EVENT_ACCEPT_READY (2)
 
-static int nb__connection_t_size(void) {
+static inline int nb__connection_t_size(void) {
 	return sizeof(nb__connection_t);
 }
+
+static inline void nb__assert(int b, const char* error) {
+	if (!b) {
+		fprintf(stderr, "%s\n", error);
+		abort();
+	}
+}
+
 
 // Data queue methods
 struct data_queue_t* nb__new_data_queue(void);

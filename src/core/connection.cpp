@@ -25,7 +25,7 @@ builder::builder dynamic_object::get(builder::dyn_var<connection_t*> c, std::str
 	// TODO: assert that member is valid and registered
 	// This functionality of producing the appropriate expression can be offloaded
 	// to the map
-	return (builder::builder)(builder::dyn_var<int>)builder::as_member_of(((builder::dyn_var<connection_t>)(builder::cast)(c[0])).addr(), name);
+	return (builder::builder)(builder::dyn_var<int>)builder::as_member(((builder::dyn_var<connection_t>)(builder::cast)(c[0])).addr(), name);
 }
 
 }

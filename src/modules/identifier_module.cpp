@@ -9,7 +9,7 @@ const char data_queue_t_name[] = "nb__data_queue_t";
 const char accept_queue_t_name[] = "nb__accept_queue_t";
 #define MAX_ACTIVE_CONNECTIONS (512)
 namespace runtime {
-builder::dyn_var<char[HOST_IDENTIFIER_LEN]> wildcard_host_identifier("nb__wildcard_host_identifier");
+builder::dyn_var<char[HOST_IDENTIFIER_LEN]> wildcard_host_identifier = builder::as_global("nb__wildcard_host_identifier");
 }
 
 identifier_module identifier_module::instance;

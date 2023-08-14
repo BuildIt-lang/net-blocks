@@ -4,8 +4,9 @@
 nb__timer nb__allocated_timers[MAX_TIMER_ALLOCS];
 nb__timer* nb__timer_free_list = NULL;
 
-// Actual slots to hold the timers
-nb__timer* nb__timer_slots[MAX_TIMER_SLOTS];
+// We are going to hold the timers in a ll
+// This makes management somewhat easy
+nb__timer* nb__timers_head = NULL;
 
 nb__timer* nb__alloc_timer(void) {
 	if (nb__timer_free_list == NULL)
@@ -23,13 +24,31 @@ void nb__insert_timer(nb__timer* t, unsigned long long to, nb__timer_callback_t 
 	t->argument = argument;
 	t->timeout = to;
 
-	// TODO: Ensure that we do not insert timers too ahead
-	int slot = to % MAX_TIMER_SLOTS;
-	t->next = nb__timer_slots[slot];
-	t->prev = NULL;
-	if (t->next)
-		t->next->prev = t;
-	nb__timer_slots[slot] = t;		
+	t->next = t->prev = NULL;
+
+	// We find curr such that curr is the timer 
+	// _after_ where to insert
+	nb__timer* curr = nb__timers_head;
+	nb__timer* prev = NULL;
+	while (curr != NULL) {
+		if (curr->timeout > to) 
+			break;	
+		prev = curr;
+		curr = curr->next;
+	}
+	if (prev == NULL) {
+		// Timer is being inserted at the begining 
+		nb__timers_head = t;
+		t->next = curr;
+		if (curr) curr->prev = t;	
+	} else {
+		prev->next = t;
+		t->next = curr;
+		t->prev = prev;
+		if (curr) curr->prev = t;
+	}
+
+
 }
 void nb__remove_timer(nb__timer* t) {
 	if (t->next) {
@@ -37,10 +56,8 @@ void nb__remove_timer(nb__timer* t) {
 	}
 	if (t->prev) {
 		t->prev->next = t->next;
-	} else {
-		int slot = t->timeout % MAX_TIMER_SLOTS;
-		nb__timer_slots[slot] = t->next;
-	}
+	} else 
+		nb__timers_head = t->next;
 	t->next = t->prev = NULL;
 	t->timeout = -1;
 }
@@ -53,31 +70,23 @@ void nb__init_timers(void) {
 		nb__allocated_timers[i].next = &nb__allocated_timers[i+1];
 	}
 	nb__allocated_timers[MAX_TIMER_ALLOCS-1].next = NULL;
-	
-	for (int i = 0; i < MAX_TIMER_SLOTS; i++) {
-		nb__timer_slots[i] = NULL;
-	}
 	nb__last_timer_checked = nb__get_time_ms_now();
 }
 
 
 void nb__check_timers(void) {
 	unsigned long long t_now = nb__get_time_ms_now();
-	// Check all timers till now
-	// This is because sometimes timers might not be checked if the stack is stuck
-	for (unsigned long long i = nb__last_timer_checked + 1; i <= t_now; i++) {
-		int slot = i % MAX_TIMER_SLOTS;
-		while (nb__timer_slots[slot]) {
-			nb__timer* t = nb__timer_slots[slot];
-			// This is so that we keep the current slot consistent
-			// It is possible that insertions and deletions might happen in callbacks
-			if (t->next) 
-				t->next->prev = NULL;
-			nb__timer_slots[slot] = t->next;
-			// It is the callback's job to free up this object
-			// callbacks are allowed to reinsert timers if they wish
-			t->callback(t, t->argument, i);
-		}
+	// Fire all timers who's timeout <= time now
+
+	while (nb__timers_head != NULL) {
+		if (nb__timers_head->timeout <= t_now) {
+			nb__timer* t = nb__timers_head;
+			nb__remove_timer(t);
+			// We are firing the callback with current time as the third argument
+			t->callback(t, t->argument, t_now);
+		} else
+			break;
 	}
+
 	nb__last_timer_checked = t_now;
 }

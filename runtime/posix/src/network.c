@@ -7,9 +7,9 @@
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
+#include <sys/uio.h>
 #define MAX_FDS (256)
 
-#define DEBUG (1)
 
 // static table to keep track of connection objects
 static nb__connection_t* fd_table[MAX_FDS];
@@ -27,7 +27,7 @@ static void nb_step_delay(void) {
 	// This is a configurable delay function, 
 	// in real time-low latency applications that doesn't require OS intervention
 	// this will be NOP
-	usleep(100 * 1000);	
+	usleep(100);	
 }
 
 static int grab_free_fd(void) {
@@ -47,14 +47,13 @@ volatile static unsigned fd_accept_counter[MAX_FDS];
 // If the generated stack has parameters/variations, 
 // we could use these in the future
 int nbp_socket(int domain, int type, int protocol) {
-#if DEBUG
-	printf("nbp_socket called\n");
-#endif
 	int fd = grab_free_fd();
 	// this fd has just been reserved, we will create it when we 
 	// have all the parameters	
 	fd_table[fd] = NULL;
 	fd_accept_counter[fd] = 0;
+
+	nbp_debug("nbp_socket returning = %d", fd);
 
 	return fd;
 }
@@ -64,9 +63,7 @@ int nbp_socket(int domain, int type, int protocol) {
 static void nb_posix_common_callback(int event, nb__connection_t * c) {
 	if (event == QUEUE_EVENT_ACCEPT_READY) {
 		int fd = fd_from_connection(c);
-#ifdef DEBUG
-		printf("Accept event fired on fd = %d\n", fd);
-#endif 
+		nbp_debug("Callback event on fd = %d", fd);
 		fd_accept_counter[fd]++;
 	}
 	return;
@@ -77,9 +74,9 @@ static void nb_posix_common_callback(int event, nb__connection_t * c) {
 static unsigned int port_counter = 20;
 
 int nbp_connect (int sockfd, const struct sockaddr* _addr, socklen_t addrLen) {
-#if DEBUG
-	printf("nbp_connect called with fd = %d\n", sockfd);
-#endif
+
+	nbp_debug("nbp_connect with fd = %d", sockfd);	
+
 	if (nb_fd[sockfd] != 1) {
 		// this fd does not belong to us
 		return connect(sockfd, _addr, addrLen);
@@ -111,13 +108,11 @@ int nbp_connect (int sockfd, const struct sockaddr* _addr, socklen_t addrLen) {
 }
 
 int nbp_bind(int sockfd, const struct sockaddr *_addr, socklen_t addrlen) {
-#if DEBUG
-	printf("nbp_bind called with fd = %d\n", sockfd);
-#endif
 	if (nb_fd[sockfd] != 1) {
 		// this fd does not belong to us
 		return bind(sockfd, _addr, addrlen);
 	}
+	nbp_debug("nbp_bind with fd = %d", sockfd);	
 	// Assuming the address are TCP like
 	assert(addrlen >= sizeof(struct sockaddr_in));
 	const struct sockaddr_in* addr = (void*) _addr;
@@ -143,13 +138,11 @@ int nbp_bind(int sockfd, const struct sockaddr *_addr, socklen_t addrlen) {
 
 
 int nbp_listen(int sockfd, int backlog) {
-#if DEBUG
-	printf("nbp_listen called with fd = %d\n", sockfd);
-#endif
 	if (nb_fd[sockfd] != 1) {
 		// this fd does not belong to us
 		return listen(sockfd, backlog);
 	}
+	nbp_debug("nbp_listen with fd = %d", sockfd);	
 	// Our implementation has to implementation of listen
 	// so this is a noop
 	
@@ -161,13 +154,12 @@ int nbp_listen(int sockfd, int backlog) {
 
 
 int nbp_accept(int sockfd, struct sockaddr *addr, socklen_t * addrlen) {
-#if DEBUG
-	printf("NBP_ACCEPT INVOKED ON FD = %d\n", sockfd);
-#endif
 	if (nb_fd[sockfd] != 1) {
 		// this fd does not belong to us
-		return accept(sockfd, addr, addrlen);
+		int fd = accept(sockfd, addr, addrlen);
+		return fd;
 	}
+	nbp_debug("nbp_accept with fd = %d", sockfd);	
 	// Just make sure this is our fd
 	assert(nb_fd[sockfd] == 1);
 	// Accept requires the accept event to fire	
@@ -185,32 +177,70 @@ int nbp_accept(int sockfd, struct sockaddr *addr, socklen_t * addrlen) {
 	// This currently isn't required to be called repeatedly, but if accept-done is changed to 
 	// fire an event, we will run this till accept-done event is called
 	nb__main_loop_step();	
+
+	if (addr != NULL && addrlen != NULL) {
+		// Return the accept information otherwise apps might complain
+		struct sockaddr_in* addr_in = (void*) addr;
+		addr_in->sin_family = AF_INET;
+		addr_in->sin_port = fd_table[fd]->remote_app_id;
+		addr_in->sin_addr.s_addr = 0;
+		memcpy(&(addr_in->sin_addr.s_addr), fd_table[fd]->remote_host_id, sizeof(addr_in->sin_addr.s_addr));
+		*addrlen = sizeof(struct sockaddr_in);
+	}
 	
 	return fd;
 }
 
 ssize_t nbp_send(int sockfd, const char buf[], size_t len, int flags) {
-#if DEBUG
-	printf("nbp_send called with fd = %d\n", sockfd);
-#endif
 	if (nb_fd[sockfd] != 1) {
 		// this fd does not belong to us
 		return send(sockfd, buf, len, flags);
 	}
+	nbp_debug("nbp_send with fd = %d", sockfd);	
 	// Just make sure this is our fd
 	assert(nb_fd[sockfd] == 1);
 	// the flags will be ignored for this implementation
 	return nb__send(fd_table[sockfd], (char*)buf, len);
 }
 
+ssize_t nbp_write(int sockfd, const char buf[], size_t len) {
+
+
+	if (nb_fd[sockfd] != 1) {
+		// this fd does not belong to us
+		return write(sockfd, buf, len);
+	}
+
+	nbp_debug("nbp_write with fd = %d", sockfd);	
+
+	// Just make sure this is our fd
+	assert(nb_fd[sockfd] == 1);
+	// the flags will be ignored for this implementation
+	return nb__send(fd_table[sockfd], (char*)buf, len);
+	
+}
+ssize_t nbp_writev(int sockfd, const struct iovec *iov, int iovcnt) {
+	if (nb_fd[sockfd] != 1) {
+		// this fd does not belong to us
+		return writev(sockfd, iov, iovcnt);
+	}
+	nbp_debug("nbp_writev with fd = %d", sockfd);	
+	size_t len_sent = 0;
+	for (int i = 0; i < iovcnt; i++) {
+		size_t l = nb__send(fd_table[sockfd], iov[i].iov_base, iov[i].iov_len);
+		len_sent += l;
+		if (l != iov[i].iov_len)
+			break;
+	}
+	return len_sent;
+}
+
 ssize_t nbp_recv(int sockfd, char buf[], size_t len, int flags) {
-#if DEBUG
-	printf("nbp_recv called with fd = %d\n", sockfd);
-#endif
 	if (nb_fd[sockfd] != 1) {
 		// this fd does not belong to us
 		return recv(sockfd, buf, len, flags);
 	}
+	nbp_debug("nbp_recv with fd = %d", sockfd);	
 	// Just make sure this is our fd
 	assert(nb_fd[sockfd] == 1);
 	// Ideally we would want to wait for read ready events, but nb__read has a non-blocking API
@@ -225,26 +255,30 @@ ssize_t nbp_recv(int sockfd, char buf[], size_t len, int flags) {
 	}
 	return ret_len;	
 }
+ssize_t nbp_read(int sockfd, char buf[], size_t len) {
+	if (nb_fd[sockfd] != 1) {
+		// this fd does not belong to us
+		return read(sockfd, buf, len);
+	}
+	nbp_debug("nbp_read with fd = %d", sockfd);	
+	return nbp_recv(sockfd, buf, len, 0);	
+}
 
 int nbp_setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen) {
-#if DEBUG
-	printf("SETSOCKOPT called on fd=%d\n", sockfd);
-#endif
 	if (nb_fd[sockfd] != 1) {
 		return setsockopt(sockfd, level, optname, optval, optlen);
 	}
+	nbp_debug("nbp_setsockopt with fd = %d", sockfd);	
 	// We will leave setsockopt unimplemented for now
 	// if applications require us to return certain meaningful values, we could support
 	// those
 	return 0;
 }
 int nbp_ioctl(int fd, unsigned long request, char* argp) {
-#if DEBUG
-	printf("nbp_ioctl called with fd = %d\n", fd);
-#endif
 	if (nb_fd[fd] != 1) {
 		return ioctl(fd, request, argp);
 	}
+	nbp_debug("nbp_ioctl with fd = %d", fd);	
 	// We will leave ioctl unimplemented for now
 	// if applications require us to return certain meaningful values, we could support 
 	// those	
@@ -252,13 +286,19 @@ int nbp_ioctl(int fd, unsigned long request, char* argp) {
 }
 
 int nbp_close(int fd) {
-#if DEBUG
-	printf("nbp_close called with fd = %d\n", fd);
-#endif
 	if (nb_fd[fd] != 1) {
 		return close(fd);
 	}
-	// TODO: implement close
+	nbp_debug("nbp_close with fd = %d", fd);	
+	nb__connection_t* conn = fd_table[fd];
+	nb__destablish(conn);	
+	// We will immediately deregister this fd and 
+	// close the underlying file	
+	// If we add a close event, we will wait for 
+	// the event
+	fd_table[fd] = NULL;
+	nb_fd[fd] = 0;
+	close(fd);
 	return 0;
 }
 
@@ -267,7 +307,7 @@ int nbp_init_server(const char* ip) {
 	nb__net_init();
 	unsigned long my_ip = inet_addr(ip);
 	memcpy(nb__my_host_id, &my_ip, 6);
-	printf("nbp_init_server complete\n");
+	printf("nbp_init_server complete");
 	return 0;
 }
 int nbp_init_client(const char* ip) {
@@ -287,6 +327,9 @@ int nbp_pause(void) {
 }
 
 int nbp_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout) {
+
+	// nbp_debug("nbp_select with nfds = %d", nfds);	
+
 	// for the nbp implementation we will ingore the writefd and the exceptfds, they are always ready
 	// We will also assume that all fds are belong to us	
 	int fds[MAX_FDS];
@@ -295,31 +338,31 @@ int nbp_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, s
 	for (int fd = 0; fd < nfds; fd++) {
 		if (FD_ISSET(fd, readfds)) {
 			fds[fd_count++] = fd;
+			// nbp_debug("> in set = %d\n", fd);
 		}
 	}
-#if DEBUG
-	printf("Called select with fds = ");
-	for (int i = 0; i < fd_count; i++) {
-		int fd = fds[i];
-		printf("%d, ", fd);
-	}
-	printf("\n");
-#endif
+
 	FD_ZERO(readfds);
 	// We have a set of fds ready to go now
 	// check if any of them have accept or read events ready	
-	while (1) {
+	size_t count = 0;
+	while (count < 1000) {
 		nb__main_loop_step();	
 		for (int i = 0; i < fd_count; i++) {
 			int fd = fds[i];
 			if (fd_accept_counter[fd] != 0) {
-#if DEBUG
-			printf("Read ready fd = %d\n", fd);
-#endif
 				FD_SET(fd, readfds);
+				nbp_debug("From nbp_select ready for accept fd = %d", fd);
+				return 1;
+			} 
+			if (fd_table[fd]->input_queue->current_elems) {
+				FD_SET(fd, readfds);
+				nbp_debug("From nbp_select ready for read fd = %d", fd);
 				return 1;
 			}
 		}
 		nb_step_delay();
+		count++;
 	}
+	return 0;
 }

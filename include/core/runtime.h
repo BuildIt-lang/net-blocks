@@ -5,6 +5,8 @@
 namespace net_blocks {
 namespace runtime {
 
+extern builder::dyn_var<void (int, char*)> nb_assert;
+
 extern builder::dyn_var<void* (int)> malloc;
 extern builder::dyn_var<void (void*)> free;
 extern builder::dyn_var<void (void*, void*, int)> memcpy;

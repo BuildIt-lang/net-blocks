@@ -31,6 +31,7 @@ $(shell mkdir -p $(BUILD_DIR)/test/simple_test_reliable)
 $(shell mkdir -p $(BUILD_DIR)/test/simple_test_posix)
 $(shell mkdir -p $(BUILD_DIR)/runtime/mlx5_impl)
 $(shell mkdir -p $(BUILD_DIR)/runtime/posix)
+$(shell mkdir -p $(BUILD_DIR)/utils)
 
 BUILDIT_LIBRARY_NAME=buildit
 BUILDIT_LIBRARY_PATH=$(BUILDIT_DIR)/build
@@ -180,6 +181,9 @@ simple_test_run: simple_test
 	$(BUILD_DIR)/test/simple_client
 	pkill -9 simple_server || true
 
+.PHONY: utils
+utils:
+	$(CC) -O3 utils/hub/ipc_hub.c -o $(BUILD_DIR)/utils/ipc_hub	
 
 clean:
 	rm -rf $(BUILD_DIR)

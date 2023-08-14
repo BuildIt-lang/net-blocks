@@ -1,5 +1,7 @@
 #ifndef NETBLOCKS_POSIX_IMPL_H
 #define NETBLOCKS_POSIX_IMPL_H
+#include <stdarg.h>
+#include <stdio.h>
 #include <sys/socket.h>
 // This header implements all the network functionality required by 
 // posix style applications
@@ -38,5 +40,26 @@ int nbp_close(int fd);
 int nbp_pause(void);
 
 int nbp_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
+
+ssize_t nbp_write(int fd, const char buf[], size_t count);
+ssize_t nbp_read(int fd, char buf[], size_t count);
+
+ssize_t nbp_writev(int fd, const struct iovec *iov, int iovcnt);
+
+
+// debugging stuff
+#define NBP_DEBUG (0)
+
+static inline void nbp_debug(const char* fmt, ...) {
+#if NBP_DEBUG
+	va_list args;
+	va_start (args, fmt);
+	fprintf(stdout, "NBP_DEBUG: ");
+	vfprintf(stdout, fmt, args);
+	fprintf(stdout, "\n");
+	va_end(args);
+#endif
+}
+
 
 #endif
