@@ -26,12 +26,13 @@ nb__accept_queue_t* nb__new_accept_queue(void) {
 void nb__free_accept_queue(nb__accept_queue_t * q) {
 	free(q);
 }
-void nb__insert_accept_queue(nb__accept_queue_t* q, unsigned src_app_id, char* src_host_id, void* packet) {
+void nb__insert_accept_queue(nb__accept_queue_t* q, unsigned src_app_id, unsigned long long src_host_id, void* packet) {
 
 	int index = q->current_elems;
 	q->current_elems++;
 	q->src_app_id[index] = src_app_id;
-	memcpy(q->src_host_id[index], src_host_id, HOST_IDENTIFIER_LEN);
+	//memcpy(q->src_host_id[index], src_host_id, HOST_IDENTIFIER_LEN);
+	q->src_host_id[index] = src_host_id;
 	q->packet[index] = packet;
 }
 
@@ -63,7 +64,7 @@ nb__connection_t* nb__accept(nb__connection_t* c, void (*callback)(int, nb__conn
 	int index = c->accept_queue->current_elems - 1;
 	c->accept_queue->current_elems--;
 	unsigned int src_app_id = c->accept_queue->src_app_id[index];
-	char* src_host_id = c->accept_queue->src_host_id[index];
+	unsigned long long src_host_id = c->accept_queue->src_host_id[index];
 	unsigned int dst_app_id = c->local_app_id;
 	void* packet = c->accept_queue->packet[index];
 	nb__connection_t* s = nb__establish(src_host_id, src_app_id, dst_app_id, callback);
@@ -76,14 +77,16 @@ nb__connection_t* nb__accept(nb__connection_t* c, void (*callback)(int, nb__conn
 	int i;
 	for (i = 0; i < c->accept_queue->current_elems; i++) {
 		if (c->accept_queue->src_app_id[i] == src_app_id 
-			&& memcmp(c->accept_queue->src_host_id[i], src_host_id, HOST_IDENTIFIER_LEN) == 0) {
+			//&& memcmp(c->accept_queue->src_host_id[i], src_host_id, HOST_IDENTIFIER_LEN) == 0) {
+			&& c->accept_queue->src_host_id[i] == src_host_id) {
 			void* packet = c->accept_queue->packet[i];
 			if (packet)
 				nb__run_ingress_step(packet, 0);	
 			// Swap this element with the last one
 			int last = c->accept_queue->current_elems - 1;
 			c->accept_queue->src_app_id[i] = c->accept_queue->src_app_id[last];
-			memcpy(c->accept_queue->src_host_id[i], c->accept_queue->src_host_id[last], HOST_IDENTIFIER_LEN);
+			//memcpy(c->accept_queue->src_host_id[i], c->accept_queue->src_host_id[last], HOST_IDENTIFIER_LEN);
+			c->accept_queue->src_host_id[i] = c->accept_queue->src_host_id[last];
 			c->accept_queue->packet[i] = c->accept_queue->packet[last];
 			// decrement i so we don't miss a packet
 			i--;
@@ -139,7 +142,8 @@ void nb__main_loop_step(void) {
 }
 
 // Set this at init 
-char nb__my_host_id[6] = {0};
+//char nb__my_host_id[6] = {0};
+unsigned long long nb__my_host_id;
 
 nb__net_state_t* nb__net_state;
 
@@ -152,7 +156,7 @@ void nb__debug_packet(char* p) {
 	printf("\n");
 }
 
-char nb__wildcard_host_identifier[HOST_IDENTIFIER_LEN] = {0};
+unsigned long long nb__wildcard_host_identifier = 0;
 
 
 

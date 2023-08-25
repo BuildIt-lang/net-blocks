@@ -22,7 +22,7 @@ void reliable_module::init_module(void) {
 }
 
 module::hook_status reliable_module::hook_establish(builder::dyn_var<connection_t*> c, 
-	builder::dyn_var<char*> remote_host, builder::dyn_var<unsigned int> remote_app, 
+	builder::dyn_var<unsigned long long> remote_host, builder::dyn_var<unsigned int> remote_app, 
 	builder::dyn_var<unsigned int> local_app) {
 	
 	for (builder::dyn_var<int> i = 0; i < REDELIVERY_BUFFER_SIZE; i = i + 1) {

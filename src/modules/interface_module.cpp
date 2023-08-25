@@ -10,10 +10,12 @@ interface_module interface_module::instance;
 void interface_module::init_module(void) {	
 	conn_layout.register_member<callback_t>("callback_f");	
 	conn_layout.register_member<builder::dyn_var<void*>>("user_data");
-	net_packet.add_member("total_len", new generic_integer_member<int>((int)member_flags::aligned), 2);
+	auto total_len = new generic_integer_member<int>((int)member_flags::aligned);
+	net_packet.add_member("total_len", total_len, 2);
+	
 }
 
-builder::dyn_var<connection_t*> interface_module::establish_impl(builder::dyn_var<char*> host_id, builder::dyn_var<unsigned int> app_id, 
+builder::dyn_var<connection_t*> interface_module::establish_impl(builder::dyn_var<unsigned long long> host_id, builder::dyn_var<unsigned int> app_id, 
 	builder::dyn_var<unsigned int> ca, callback_t callback) {
 	// Establish a new connection object
 	builder::dyn_var<connection_t*> c;

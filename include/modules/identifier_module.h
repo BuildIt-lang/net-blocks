@@ -36,7 +36,7 @@ public:
 	
 	// Various path hooking routines
 	module::hook_status hook_establish(builder::dyn_var<connection_t*> c, 
-		builder::dyn_var<char*> h, builder::dyn_var<unsigned int> a, builder::dyn_var<unsigned int> sa);
+		builder::dyn_var<unsigned long long> h, builder::dyn_var<unsigned int> a, builder::dyn_var<unsigned int> sa);
 	
 	module::hook_status hook_destablish(builder::dyn_var<connection_t*> c);	
 
@@ -50,14 +50,14 @@ public:
 private:
 	// Internal functions
 	void add_connection(builder::dyn_var<connection_t*> c, builder::dyn_var<unsigned int> appid, 
-		builder::dyn_var<unsigned int> src_app_id, builder::dyn_var<char*> src_host_id);
+		builder::dyn_var<unsigned int> src_app_id, builder::dyn_var<unsigned long long> src_host_id);
 	bool match_connection(builder::dyn_var<int> &index, 
 		builder::dyn_var<unsigned int> dst_app_id, builder::dyn_var<unsigned int> src_app_id, 
-		builder::dyn_var<char*> src_host_id);	
+		builder::dyn_var<unsigned long long> src_host_id);	
 	builder::dyn_var<connection_t*> retrieve_connection(builder::dyn_var<unsigned int> appid,
-		builder::dyn_var<unsigned int> src_app_id, builder::dyn_var<char*> src_host_id);
+		builder::dyn_var<unsigned int> src_app_id, builder::dyn_var<unsigned long long> src_host_id);
 	void delete_connection(builder::dyn_var<unsigned int> appid,
-		builder::dyn_var<unsigned int> src_app_id, builder::dyn_var<char*> src_host_id);
+		builder::dyn_var<unsigned int> src_app_id, builder::dyn_var<unsigned long long> src_host_id);
 
 	builder::dyn_var<connection_t*> retrieve_wildcard_connection(builder::dyn_var<unsigned int> appid);
 	flow_identifier_t flow_identifier = flow_identifier_t::dst_identifiers_only;

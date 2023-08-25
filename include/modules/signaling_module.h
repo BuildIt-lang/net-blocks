@@ -15,7 +15,7 @@ public:
 
 	// Various path hooking routines
 	module::hook_status hook_establish(builder::dyn_var<connection_t*> c, 
-		builder::dyn_var<char*> h, builder::dyn_var<unsigned int> a, builder::dyn_var<unsigned int> sa);
+		builder::dyn_var<unsigned long long> h, builder::dyn_var<unsigned int> a, builder::dyn_var<unsigned int> sa);
 
 	module::hook_status hook_ingress(packet_t);
 

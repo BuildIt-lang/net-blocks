@@ -33,7 +33,7 @@ void nb__insert_data_queue(struct data_queue_t*, char*, int);
 // Accept queue methods
 nb__accept_queue_t* nb__new_accept_queue(void);
 void nb__free_accept_queue(nb__accept_queue_t*);
-void nb__insert_accept_queue(nb__accept_queue_t*, unsigned, char*, void*);
+void nb__insert_accept_queue(nb__accept_queue_t*, unsigned, unsigned long long, void*);
 
 void nb__add_connection(nb__connection_t*, unsigned sa);
 void nb__delete_connection(unsigned sa);
@@ -57,7 +57,7 @@ void* nb__return_send_buffer(char*);
 void nb__run_ingress_step (void*, int);
 int nb__send (nb__connection_t* arg0, char* arg1, int arg2);
 void nb__destablish (nb__connection_t* arg0);
-nb__connection_t* nb__establish (char* arg0, unsigned int arg1, unsigned int arg2, void (*arg3)(int, nb__connection_t*));
+nb__connection_t* nb__establish (unsigned long long arg0, unsigned int arg1, unsigned int arg2, void (*arg3)(int, nb__connection_t*));
 void nb__net_init (void);
 void nb__reliable_redelivery_timer_cb(nb__timer*, void* param, unsigned long long to);
 
@@ -75,10 +75,10 @@ void* nb__get_user_data(nb__connection_t*);
 
 
 extern char nb__reuse_mtu_buffer[];
-extern char nb__my_host_id[];
+extern unsigned long long nb__my_host_id;
 extern nb__net_state_t* nb__net_state;
 
-extern char nb__wildcard_host_identifier[];
+extern unsigned long long nb__wildcard_host_identifier;
 
 
 extern unsigned long long nb__get_time_ms_now(void);

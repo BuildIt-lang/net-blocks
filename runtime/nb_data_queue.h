@@ -15,7 +15,7 @@ typedef struct data_queue_t nb__data_queue_t;
 
 struct accept_queue_t {
 	unsigned src_app_id[MAX_ACCEPT_QUEUE_ELEMS];
-	char src_host_id[MAX_ACCEPT_QUEUE_ELEMS][HOST_IDENTIFIER_LEN];	
+	unsigned long long src_host_id[MAX_ACCEPT_QUEUE_ELEMS];	
 	void* packet[MAX_ACCEPT_QUEUE_ELEMS];
 	int current_elems;	
 };

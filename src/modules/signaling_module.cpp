@@ -12,7 +12,7 @@ void signaling_module::init_module(void) {
 }
 
 module::hook_status signaling_module::hook_establish(builder::dyn_var<connection_t*> c,
-	builder::dyn_var<char*> h, builder::dyn_var<unsigned int> a, builder::dyn_var<unsigned int> sa) {
+	builder::dyn_var<unsigned long long> h, builder::dyn_var<unsigned int> a, builder::dyn_var<unsigned int> sa) {
 /*	
 	if (!use_signaling_packet) {
 		conn_layout.get(c, "callback_f")(QUEUE_EVENT_ESTABLISHED, c);	

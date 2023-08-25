@@ -24,9 +24,17 @@ int main(int argc, char* argv[]) {
 	nb__ipc_init("/tmp/ipc_socket", 1);
 	printf("IPC initialized\n");
 	nb__net_init();
-	memcpy(nb__my_host_id, server_id, 6);
 
-	nb__connection_t * conn = nb__establish(client_id, 8081, 8080, callback);
+	unsigned long long server_id_i = 0;
+	unsigned long long client_id_i = 0;
+	memcpy(&server_id_i, server_id, sizeof(server_id));
+	memcpy(&client_id_i, client_id, sizeof(client_id));
+
+	nb__my_host_id = server_id_i;
+
+	nb__connection_t * conn = nb__establish(client_id_i, 8081, 8080, callback);
+
+
 
 	while (running) {
 		nb__main_loop_step();

@@ -12,7 +12,7 @@ void framework::register_module(module *m) {
 	m->m_sequence = m_registered_modules.size() - 1;
 }
 // Implementations for various paths	
-void framework::run_establish_path(builder::dyn_var<connection_t*> conn, builder::dyn_var<char*> host_id, builder::dyn_var<unsigned int> app_id, 
+void framework::run_establish_path(builder::dyn_var<connection_t*> conn, builder::dyn_var<unsigned long long> host_id, builder::dyn_var<unsigned int> app_id, 
 	builder::dyn_var<unsigned int> src_app_id) {
 
 	for (builder::static_var<unsigned int> i = 0; i < m_registered_modules.size(); i++) {
