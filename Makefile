@@ -29,6 +29,7 @@ $(shell mkdir -p $(BUILD_DIR)/test/simple_test_accept)
 $(shell mkdir -p $(BUILD_DIR)/test/simple_test_inorder)
 $(shell mkdir -p $(BUILD_DIR)/test/simple_test_reliable)
 $(shell mkdir -p $(BUILD_DIR)/test/simple_test_posix)
+$(shell mkdir -p $(BUILD_DIR)/test/simple_test_linux)
 $(shell mkdir -p $(BUILD_DIR)/runtime/mlx5_impl)
 $(shell mkdir -p $(BUILD_DIR)/runtime/posix)
 $(shell mkdir -p $(BUILD_DIR)/utils)
@@ -161,6 +162,7 @@ simple_test_reliable: executables $(SIMPLE_RUNTIME_OBJS)
 	$(CC) $(SIMPLE_RUNTIME_OBJS) $(BUILD_DIR)/test/simple_test_reliable/server.o $(BUILD_DIR)/runtime/nb_ipc_transport.o -o $(BUILD_DIR)/test/simple_reliable_server
 	$(CC) $(SIMPLE_RUNTIME_OBJS) $(BUILD_DIR)/test/simple_test_reliable/client.o $(BUILD_DIR)/runtime/nb_ipc_transport.o -o $(BUILD_DIR)/test/simple_reliable_client
 
+
 .PHONY: posix_interface
 posix_interface: $(SIMPLE_RUNTIME_OBJS)
 	$(CC) $(RCFLAGS) -c $(RUNTIME_DIR)/posix/src/network.c -o $(BUILD_DIR)/runtime/posix/network.o -I $(RUNTIME_DIR)/posix/include -I $(SCRATCH_DIR) -I $(RUNTIME_DIR)
@@ -174,6 +176,13 @@ simple_test_posix: posix_interface $(SIMPLE_RUNTIME_OBJS)
 	$(CC) $(SIMPLE_RUNTIME_OBJS) $(BUILD_DIR)/test/simple_test_posix/server.o $(BUILD_DIR)/runtime/nb_ipc_transport.o -o $(BUILD_DIR)/test/simple_posix_server $(BUILD_DIR)/runtime/posix/network.o
 	$(CC) $(SIMPLE_RUNTIME_OBJS) $(BUILD_DIR)/test/simple_test_posix/client.o $(BUILD_DIR)/runtime/nb_ipc_transport.o -o $(BUILD_DIR)/test/simple_posix_client $(BUILD_DIR)/runtime/posix/network.o
 	
+.PHONY: simple_test_linux
+simple_test_linux: executables $(SIMPLE_RUNTIME_OBJS)
+	$(CC) $(RCFLAGS) -c $(TEST_DIR)/test_simple_linux/server.c -o $(BUILD_DIR)/test/simple_test_linux/server.o -I$(RUNTIME_DIR) -I$(SCRATCH_DIR)
+	$(CC) $(RCFLAGS) -c $(TEST_DIR)/test_simple_linux/client.c -o $(BUILD_DIR)/test/simple_test_linux/client.o -I$(RUNTIME_DIR) -I$(SCRATCH_DIR)
+	$(CC) $(RCFLAGS) -c $(RUNTIME_DIR)/nb_linux_transport.c -o $(BUILD_DIR)/runtime/nb_linux_transport.o -I $(RUNTIME_DIR) -I $(SCRATCH_DIR)
+	$(CC) $(SIMPLE_RUNTIME_OBJS) $(BUILD_DIR)/test/simple_test_linux/server.o $(BUILD_DIR)/runtime/nb_linux_transport.o -o $(BUILD_DIR)/test/simple_linux_server 
+	$(CC) $(SIMPLE_RUNTIME_OBJS) $(BUILD_DIR)/test/simple_test_linux/client.o $(BUILD_DIR)/runtime/nb_linux_transport.o -o $(BUILD_DIR)/test/simple_linux_client 
 
 simple_test_run: simple_test
 	$(BUILD_DIR)/test/simple_server &

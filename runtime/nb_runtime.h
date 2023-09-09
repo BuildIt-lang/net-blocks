@@ -40,7 +40,7 @@ void nb__delete_connection(unsigned sa);
 nb__connection_t* nb__retrieve_connection(unsigned sa);
 
 
-void nb__debug_packet(char* p);
+void nb__debug_packet(char* p, size_t len);
 
 
 // Network interface API
@@ -51,7 +51,8 @@ void nb__ipc_deinit();
 void nb__mlx5_init(void);
 char* nb__request_send_buffer(void);
 void* nb__return_send_buffer(char*);
-
+void nb__linux_runtime_init(const char* iface);
+void nb__linux_runtime_deinit(void);
 
 // Generated protocol API
 void nb__run_ingress_step (void*, int);
