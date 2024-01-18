@@ -22,7 +22,7 @@ static void callback(int event, nb__connection_t * c) {
 
 int main(int argc, char* argv[]) {
 
-	nb__linux_runtime_init("eth0");
+	nb__linux_runtime_init("dummy0");
 	printf("Linux Runtime initialized\n");
 
 	nb__net_init();

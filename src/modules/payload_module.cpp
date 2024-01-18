@@ -8,7 +8,8 @@ payload_module payload_module::instance;
 void payload_module::init_module(void) {	
 	// This should always be the last member
 	// TODO: introduce groups and add this member in the last group
-	net_packet.add_member("payload", new generic_integer_member<char>((int)member_flags::aligned), 5);
+	//net_packet.add_member("payload", new generic_integer_member<char>((int)member_flags::aligned), 5);
+	net_packet.add_member("payload", new byte_array_member<1>((int)member_flags::aligned), 5);
 	m_establish_depends.clear();
 	m_destablish_depends.clear();
 	m_send_depends.clear();

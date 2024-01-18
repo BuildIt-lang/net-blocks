@@ -95,7 +95,7 @@ $(BUILD_DIR)/impls/simple: $(BUILD_DIR)/impls/simple.o $(LIBRARY)
 
 # Runtime objs
 $(SCRATCH_DIR)/nb_simple.c: $(BUILD_DIR)/impls/simple
-	$(BUILD_DIR)/impls/simple $(SCRATCH_DIR)/gen_headers.h > $(SCRATCH_DIR)/nb_simple.c
+	$(BUILD_DIR)/impls/simple $(SCRATCH_DIR)/gen_headers.h $(SCRATCH_DIR)/nb_simple.c
 
 $(BUILD_DIR)/runtime/nb_simple.o: $(SCRATCH_DIR)/nb_simple.c $(RUNTIME_INCLUDES)
 	$(CC) $(RCFLAGS) $(SCRATCH_DIR)/nb_simple.c -o $(BUILD_DIR)/runtime/nb_simple.o -c -I $(RUNTIME_DIR) -I $(SCRATCH_DIR)

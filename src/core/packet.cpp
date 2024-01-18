@@ -5,6 +5,7 @@ namespace net_blocks {
 
 dynamic_member::~dynamic_member() {}
 
+
 void dynamic_layout::add_member(std::string name, dynamic_member* m, int group) {
 	m->m_order = m_total_members;
 	m->m_parent = this;
