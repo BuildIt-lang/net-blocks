@@ -9,13 +9,12 @@
 #define SERVER_PORT (8080)
 
 int main(int argc, char* argv[]) {	
-	nb__ipc_init("/tmp/ipc_socket", 1);
+	nb__transport_default_init();
+	unsigned int my_ip = inet_addr(SERVER_IP);
+	nb__my_host_id = my_ip;
 	nb__net_init();
-	unsigned long my_ip = inet_addr(SERVER_IP);
-	memcpy(nb__my_host_id, &my_ip, 6);
 
 	int fd = nbp_socket(AF_INET, SOCK_STREAM, 0);
-	//printf("fd created = %d", fd);
 
 	struct sockaddr_in srvaddr;
 	srvaddr.sin_family = AF_INET;

@@ -23,7 +23,10 @@ builder::dyn_var<void* (void)> new_data_queue = builder::as_global("nb__new_data
 builder::dyn_var<void (void*)> free_data_queue = builder::as_global("nb__free_data_queue");
 builder::dyn_var<void (void*, void*, int)> insert_data_queue = builder::as_global("nb__insert_data_queue");
 
-builder::dyn_var<char*> my_host_id = builder::as_global("nb__my_host_id");
+builder::dyn_var<unsigned int> my_host_id = builder::as_global("nb__my_host_id");
+builder::dyn_var<unsigned long long> my_local_host_id = builder::as_global("nb__my_local_host_id");
+builder::dyn_var<unsigned int> wildcard_host_identifier = builder::as_global("nb__wildcard_host_identifier");
+
 builder::dyn_var<void (void*)> debug_packet = builder::as_global("nb__debug_packet");
 builder::dyn_var<char*> reuse_mtu_buffer = builder::as_global("nb__reuse_mtu_buffer");
 
@@ -47,6 +50,17 @@ builder::dyn_var<void(timer_t*)> return_timer = builder::as_global("nb__return_t
 builder::dyn_var<void(timer_t*, unsigned long long, void*, void*)> insert_timer = builder::as_global("nb__insert_timer");
 builder::dyn_var<void(timer_t*)> remove_timer = builder::as_global("nb__remove_timer");
 
+
+const char routing_table_entry_name[] = "struct routing_table_entry";
+builder::dyn_var<unsigned long long(unsigned int, rte_t*, int)> routing_lookup_from_global = 
+	builder::as_global("nb__routing_table_lookup_from_global");
+
+builder::dyn_var<unsigned short(unsigned char*, size_t)> do_ip_checksum = builder::as_global("nb__do_ip_checksum");
+
+
+builder::dyn_var<unsigned short(unsigned short)> u_htons = builder::as_global("htons");
+builder::dyn_var<unsigned short(unsigned short)> u_ntohs = builder::as_global("ntohs");
+builder::dyn_var<void(void)> info_log = builder::as_global("nb__info_log");
 }
 }
 

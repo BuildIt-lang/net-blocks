@@ -8,10 +8,14 @@ namespace net_blocks {
 inorder_module inorder_module::instance;
 
 void inorder_module::init_module(void) {
+
 	conn_layout.register_member<builder::dyn_var<unsigned int>>("last_sent_sequence");
 	conn_layout.register_member<builder::dyn_var<unsigned int>>("last_recv_sequence");
-	net_packet.add_member("sequence_number", new generic_integer_member<unsigned int>((int)member_flags::aligned), 4);
 
+	// Add the sequence number if either we have reliability or inorder delivery
+	if (inorder_strategy != no_inorder || reliable_module::instance.is_enabled)
+		net_packet.add_member("sequence_number", new generic_integer_member<unsigned int>((int)member_flags::aligned), 4);
+	
 	if (inorder_strategy == hold_forever) {
 		conn_layout.register_member<builder::dyn_var<void*[INORDER_BUFFER_SIZE]>>("inorder_buffer");
 		conn_layout.register_member<builder::dyn_var<unsigned int>>("max_ooo_sequence");
@@ -25,7 +29,7 @@ void inorder_module::init_module(void) {
 
 
 module::hook_status inorder_module::hook_establish(builder::dyn_var<connection_t*> c, 
-	builder::dyn_var<unsigned long long> remote_host, builder::dyn_var<unsigned int> remote_app, 
+	builder::dyn_var<unsigned int> remote_host, builder::dyn_var<unsigned int> remote_app, 
 	builder::dyn_var<unsigned int> local_app) {
 	
 	// Fairly randomly chosen value :)	
@@ -48,7 +52,9 @@ module::hook_status inorder_module::hook_send(builder::dyn_var<connection_t*> c,
 
 	builder::dyn_var<unsigned int> sq = conn_layout.get(c, "last_sent_sequence") + 1;
 	conn_layout.get(c, "last_sent_sequence") = sq;
-	net_packet["sequence_number"]->set_integer(p, sq);
+
+	if (inorder_strategy != no_inorder || reliable_module::instance.is_enabled)
+		net_packet["sequence_number"]->set_integer(p, sq);
 		
 	return module::hook_status::HOOK_CONTINUE;
 
@@ -60,37 +66,49 @@ module::hook_status inorder_module::hook_ingress(packet_t p) {
 	builder::dyn_var<connection_t*> c = runtime::to_void_ptr(net_packet["flow_identifier"]->get_integer(p));
 	// Implement a simple inorder delivery based on dropping
 	builder::dyn_var<unsigned int> last_seq = conn_layout.get(c, "last_recv_sequence");
-	builder::dyn_var<unsigned int> packet_seq = net_packet["sequence_number"]->get_integer(p);
 	
 	if (inorder_strategy == drop_out_of_order) {
+		builder::dyn_var<unsigned int> packet_seq = net_packet["sequence_number"]->get_integer(p);
 		if (last_seq < packet_seq) {
 			// All good, we are in order
 			// Update the last sequence
 			conn_layout.get(c, "last_recv_sequence") = packet_seq;
 			// Deliver the packet to the user
-			builder::dyn_var<int> payload_len = net_packet["total_len"]->get_integer(p) - ((net_packet.get_total_size()) - 1 - get_headroom());
-			runtime::insert_data_queue(conn_layout.get(c, "input_queue"), net_packet["payload"]->get_addr(p), payload_len);	
+			builder::dyn_var<int> payload_len = net_packet["computed_total_len"]->get_integer(p) - ((net_packet.get_total_size()) - 1 - get_headroom());
+			if (payload_len != 0)
+				runtime::insert_data_queue(conn_layout.get(c, "input_queue"), net_packet["payload"]->get_addr(p), payload_len);	
 			return module::hook_status::HOOK_CONTINUE;
 		}
 		return module::hook_status::HOOK_DROP;
 	} else if (inorder_strategy == hold_forever) {
+		builder::dyn_var<unsigned int> packet_seq = net_packet["sequence_number"]->get_integer(p);
 		if (last_seq == 0 || packet_seq == last_seq + 1) {
 			// All good, we are in order
-			builder::dyn_var<int> payload_len = net_packet["total_len"]->get_integer(p) - ((net_packet.get_total_size()) - 1 - get_headroom());
-			runtime::insert_data_queue(conn_layout.get(c, "input_queue"), net_packet["payload"]->get_addr(p), payload_len);	
+			// This particular check is responsibility of the payload module
+			// And payload module should run before inorder, but since we are not 
+			// Scheduling it correctly, just moving it here. 
+			//if (!is_compatibility_mode)
+				net_packet["computed_total_len"]->set_integer(p, net_packet["total_len"]->get_integer(p));
+			builder::dyn_var<int> payload_len = net_packet["computed_total_len"]->get_integer(p) - ((net_packet.get_total_size()) - 1 - get_headroom());
+			if (payload_len != 0)
+				runtime::insert_data_queue(conn_layout.get(c, "input_queue"), net_packet["payload"]->get_addr(p), payload_len);	
 			conn_layout.get(c, "last_recv_sequence") = packet_seq;
 			// Now that we have received this packet, maybe we have more out of order packets to deliver
 			for (builder::dyn_var<unsigned int> i = packet_seq + 1; i <= conn_layout.get(c, "max_ooo_sequence"); i = i + 1) {
 				builder::dyn_var<unsigned int> index = i % INORDER_BUFFER_SIZE;
 				if (conn_layout.get(c, "inorder_buffer")[index] != 0) {
 					p = conn_layout.get(c, "inorder_buffer")[index];
-					builder::dyn_var<int> payload_len = net_packet["total_len"]->get_integer(p) - ((net_packet.get_total_size()) - 1 - get_headroom());
-					runtime::insert_data_queue(conn_layout.get(c, "input_queue"), net_packet["payload"]->get_addr(p), payload_len);	
+					//if (!is_compatibility_mode)
+						net_packet["computed_total_len"]->set_integer(p, net_packet["total_len"]->get_integer(p));
+					builder::dyn_var<int> payload_len = net_packet["computed_total_len"]->get_integer(p) - ((net_packet.get_total_size()) - 1 - get_headroom());
+					if (payload_len != 0)
+						runtime::insert_data_queue(conn_layout.get(c, "input_queue"), net_packet["payload"]->get_addr(p), payload_len);	
 					conn_layout.get(c, "last_recv_sequence") = i;	
 					conn_layout.get(c, "inorder_buffer")[index] = 0;
 				} else 
 					break;	
 			}
+			return module::hook_status::HOOK_CONTINUE;
 		} else {
 			// We received a packet out of order, shelve it
 			builder::dyn_var<unsigned int> index = packet_seq % INORDER_BUFFER_SIZE;
@@ -98,10 +116,12 @@ module::hook_status inorder_module::hook_ingress(packet_t p) {
 			if (conn_layout.get(c, "max_ooo_sequence") < packet_seq) {
 				conn_layout.get(c, "max_ooo_sequence") = packet_seq;
 			}
+			return module::hook_status::HOOK_DROP;
 		}
 	} else {
-		builder::dyn_var<int> payload_len = net_packet["total_len"]->get_integer(p) - ((net_packet.get_total_size()) - 1 - get_headroom());
-		runtime::insert_data_queue(conn_layout.get(c, "input_queue"), net_packet["payload"]->get_addr(p), payload_len);	
+		builder::dyn_var<int> payload_len = net_packet["computed_total_len"]->get_integer(p) - ((net_packet.get_total_size()) - 1 - get_headroom());
+		if (payload_len != 0)
+			runtime::insert_data_queue(conn_layout.get(c, "input_queue"), net_packet["payload"]->get_addr(p), payload_len);	
 		return module::hook_status::HOOK_CONTINUE;
 	}
 	return module::hook_status::HOOK_DROP;

@@ -9,6 +9,10 @@ namespace net_blocks {
 reliable_module reliable_module::instance;
 
 void reliable_module::init_module(void) {	
+
+	if (!is_enabled)
+		return;
+
 	// This buffer helps us find waiting packets when ACKs arrive
 	conn_layout.register_member<builder::dyn_var<void*[REDELIVERY_BUFFER_SIZE]>>("redelivery_buffer");	
 	conn_layout.register_member<builder::dyn_var<unsigned int>>("first_unacked_seq");	
@@ -22,7 +26,7 @@ void reliable_module::init_module(void) {
 }
 
 module::hook_status reliable_module::hook_establish(builder::dyn_var<connection_t*> c, 
-	builder::dyn_var<unsigned long long> remote_host, builder::dyn_var<unsigned int> remote_app, 
+	builder::dyn_var<unsigned int> remote_host, builder::dyn_var<unsigned int> remote_app, 
 	builder::dyn_var<unsigned int> local_app) {
 	
 	for (builder::dyn_var<int> i = 0; i < REDELIVERY_BUFFER_SIZE; i = i + 1) {
@@ -38,7 +42,7 @@ static builder::dyn_var<void(timer_t*, void*, unsigned long long)> redelivery_ti
 static void redelivery_cb(builder::dyn_var<runtime::timer_t*> t, builder::dyn_var<void*> param, 
 		builder::dyn_var<unsigned long long> to) {
 	packet_t p = param;	
-	builder::dyn_var<int> size = net_packet["total_len"]->get_integer(p);
+	builder::dyn_var<int> size = net_packet["computed_total_len"]->get_integer(p);
 	runtime::send_packet(p + get_headroom(), size);
 	
 	runtime::insert_timer(t, to + REDELIVERY_TIMEOUT_MS, redelivery_timer_callback, p);
@@ -97,7 +101,9 @@ module::hook_status reliable_module::hook_ingress(packet_t p) {
 	builder::dyn_var<int*> ret_len_ptr = &ret_len;
 	net_packet["ack_sequence_number"]->set_integer(p_ack, seq);
 	// Ack packets have size = 1
+	// TODO: Make this happen through the interface module
 	net_packet["total_len"]->set_integer(p_ack, net_packet.get_total_size() - get_headroom());
+	net_packet["computed_total_len"]->set_integer(p_ack, net_packet.get_total_size() - get_headroom());
 	for (builder::static_var<unsigned int> i = m_sequence + 1; i < framework::instance.m_registered_modules.size(); i++) {
 		builder::static_var<int> s = (int)framework::instance.m_registered_modules[i]->hook_send(c, p_ack, buff, 1, ret_len_ptr);
 		if (s == (int)module::hook_status::HOOK_DROP)

@@ -17,14 +17,12 @@ typedef builder::dyn_var<void (int, connection_t*)> callback_t;
 // hook any paths
 class interface_module {
 
-	interface_module() = default;
-
 public:
 	static interface_module instance;
 
 	void init_module(void);
 	
-	builder::dyn_var<connection_t*> establish_impl(builder::dyn_var<unsigned long long>, builder::dyn_var<unsigned int>, 
+	builder::dyn_var<connection_t*> establish_impl(builder::dyn_var<unsigned int>, builder::dyn_var<unsigned int>, 
 		builder::dyn_var<unsigned int> ca, callback_t);
 
 	void destablish_impl(builder::dyn_var<connection_t*>);
@@ -37,6 +35,10 @@ public:
 
 	void net_init_impl(void);
 
+private:
+	interface_module() = default;
+public:
+	const char* get_module_name(void) { return "InterfaceModule"; }
 
 };
 

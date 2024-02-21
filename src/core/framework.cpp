@@ -7,26 +7,55 @@ namespace net_blocks {
 
 framework framework::instance;
 
+
+static bool debug_module_paths = false;
+
+
+static void debug_establish_drop(module* m) {
+	if (debug_module_paths) {
+		runtime::info_log("Establish connection dropped", m->get_module_name());
+	}
+}
+static void debug_destablish_drop(module* m) {
+	if (debug_module_paths) {
+		runtime::info_log("Destablish connection dropped", m->get_module_name());
+	}
+}
+static void debug_send_drop(module* m, packet_t p, builder::dyn_var<int> len) {
+	if (debug_module_paths) {
+		runtime::info_log("Packet [%p, %d] dropped on send path", m->get_module_name(), p, len);
+	}
+}
+static void debug_ingress_drop(module* m, packet_t p, builder::dyn_var<int> len) {
+	if (debug_module_paths) {
+		runtime::info_log("Packet [%p, %d] dropped on ingress path", m->get_module_name(), p, len);
+	}
+}
+
 void framework::register_module(module *m) {
 	m_registered_modules.push_back(m);
 	m->m_sequence = m_registered_modules.size() - 1;
 }
 // Implementations for various paths	
-void framework::run_establish_path(builder::dyn_var<connection_t*> conn, builder::dyn_var<unsigned long long> host_id, builder::dyn_var<unsigned int> app_id, 
+void framework::run_establish_path(builder::dyn_var<connection_t*> conn, builder::dyn_var<unsigned int> host_id, builder::dyn_var<unsigned int> app_id, 
 	builder::dyn_var<unsigned int> src_app_id) {
 
 	for (builder::static_var<unsigned int> i = 0; i < m_registered_modules.size(); i++) {
 		builder::static_var<int> s = (int)m_registered_modules[i]->hook_establish(conn, host_id, app_id, src_app_id);
-		if (s == (int)module::hook_status::HOOK_DROP)
+		if (s == (int)module::hook_status::HOOK_DROP) {			
+			debug_establish_drop(m_registered_modules[i]);	
 			break;
+		}
 	}
 }
 
 void framework::run_destablish_path(builder::dyn_var<connection_t*> c) {
 	for (builder::static_var<unsigned int> i = 0; i < m_registered_modules.size(); i++) {
 		builder::static_var<int> s = (int)m_registered_modules[i]->hook_destablish(c);
-		if (s == (int)module::hook_status::HOOK_DROP)
+		if (s == (int)module::hook_status::HOOK_DROP) {
+			debug_destablish_drop(m_registered_modules[i]);	
 			break;
+		}
 	}
 }
 builder::dyn_var<int> framework::run_send_path(builder::dyn_var<connection_t*> conn, 
@@ -38,8 +67,10 @@ builder::dyn_var<int> framework::run_send_path(builder::dyn_var<connection_t*> c
 			
 	for (builder::static_var<unsigned int> i = 0; i < m_registered_modules.size(); i++) {
 		builder::static_var<int> s = (int)m_registered_modules[i]->hook_send(conn, p, buff, len, ret_len_ptr);
-		if (s == (int)module::hook_status::HOOK_DROP)
+		if (s == (int)module::hook_status::HOOK_DROP) {
+			debug_send_drop(m_registered_modules[i], p, len);	
 			break;
+		}
 	}
 	
 	return ret_len;
@@ -48,8 +79,10 @@ builder::dyn_var<int> framework::run_send_path(builder::dyn_var<connection_t*> c
 void framework::run_ingress_path(packet_t p) {
 	for (builder::static_var<int> i = m_registered_modules.size() - 1; i >= 0; i--) {
 		builder::static_var<int> s = (int)m_registered_modules[i]->hook_ingress(p);
-		if (s == (int)module::hook_status::HOOK_DROP)
+		if (s == (int)module::hook_status::HOOK_DROP) {
+			debug_ingress_drop(m_registered_modules[i], p, 0);	
 			break;
+		}
 	}	
 }
 

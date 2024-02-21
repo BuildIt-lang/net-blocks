@@ -17,7 +17,7 @@ public:
 	
 	// Various path hooking routines
 	virtual hook_status hook_establish(builder::dyn_var<connection_t*> c, 
-		builder::dyn_var<unsigned long long> h, builder::dyn_var<unsigned int> a, builder::dyn_var<unsigned int> sa) {
+		builder::dyn_var<unsigned int> h, builder::dyn_var<unsigned int> a, builder::dyn_var<unsigned int> sa) {
 		return hook_status::HOOK_CONTINUE;	
 	}
 	

@@ -3,16 +3,10 @@
 
 #include "core/framework.h"
 
-
-
 namespace net_blocks {
 
 #define HOST_IDENTIFIER_LEN (6)
 #define WILDCARD_APP_ID (0)
-
-namespace runtime {
-extern builder::dyn_var<char[HOST_IDENTIFIER_LEN]> wildcard_host_identifier;	
-}
 
 
 extern const char data_queue_t_name[];
@@ -21,6 +15,14 @@ extern const char accept_queue_t_name[];
 using accept_queue_t = builder::name<accept_queue_t_name>;
 
 class identifier_module: public module {
+private:
+
+	unsigned long long host_range_min = 0;
+	unsigned long long host_range_max = 0;
+
+	unsigned short app_range_min = 0;
+	unsigned short app_range_max = 0;
+
 public:
 	
 	enum class flow_identifier_t {
@@ -36,7 +38,7 @@ public:
 	
 	// Various path hooking routines
 	module::hook_status hook_establish(builder::dyn_var<connection_t*> c, 
-		builder::dyn_var<unsigned long long> h, builder::dyn_var<unsigned int> a, builder::dyn_var<unsigned int> sa);
+		builder::dyn_var<unsigned int> h, builder::dyn_var<unsigned int> a, builder::dyn_var<unsigned int> sa);
 	
 	module::hook_status hook_destablish(builder::dyn_var<connection_t*> c);	
 
@@ -46,6 +48,7 @@ public:
 	module::hook_status hook_ingress(packet_t);
 
 	void hook_net_init(void);
+
 	
 private:
 	// Internal functions
@@ -65,7 +68,18 @@ private:
 private:
 	identifier_module() = default;
 public:
+	void set_host_range(unsigned long long min, unsigned long long max) {
+		host_range_min = min;
+		host_range_max = max;	
+	}
+	void set_app_range(unsigned short min, unsigned short max) {
+		app_range_min = min;
+		app_range_max = max;
+	}
+public:
 	static identifier_module instance;
+
+	const char* get_module_name(void) override { return "IdentifierModule"; }
 };
 
 }

@@ -23,7 +23,7 @@ public:
 	void init_module(void);
 
 	module::hook_status hook_establish(builder::dyn_var<connection_t*> c, 
-		builder::dyn_var<unsigned long long> remote_host, builder::dyn_var<unsigned int> remote_app, 
+		builder::dyn_var<unsigned int> remote_host, builder::dyn_var<unsigned int> remote_app, 
 		builder::dyn_var<unsigned int> local_app);
 
 	module::hook_status hook_send(builder::dyn_var<connection_t*> c, packet_t, 
@@ -38,6 +38,7 @@ private:
 	inorder_module() = default;
 public:
 	static inorder_module instance;
+	const char* get_module_name(void) override { return "InorderModule"; }
 };
 
 
