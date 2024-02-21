@@ -69,6 +69,13 @@ void nb__ipc_deinit(void) {
 	}
 	close(ipc_socket);
 }
+void nb__transport_default_init(void) {
+	nb__ipc_init("/tmp/ipc_socket", 0);
+}
+void nb__transport_default_deinit(void) {
+	nb__ipc_deinit();
+}
+
 char nb__reuse_mtu_buffer[IPC_MTU];
 char* nb__poll_packet(int* size, int headroom) {
 	int len;
@@ -86,6 +93,7 @@ char* nb__poll_packet(int* size, int headroom) {
 	return NULL;
 }
 int nb__send_packet(char* buff, int len) {
+	nb__debug_packet(buff, len);
 	if (nb__ipc_simulate_packet_drop) {
 		int r = rand() % PACKET_DROP_CHANCE;
 		if (r == 0) {

@@ -4,6 +4,7 @@
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <iostream>
+#include <sys/mman.h>
 
 template <typename T>
 static constexpr inline bool is_power_of_two(T x) {
@@ -20,7 +21,7 @@ static constexpr inline T round_up(T x) {
 
 #define kHugePageSize (2 * 1024 * 1024)
 
-char * alloc_shared(int size, int * shm_key_ret, struct ibv_pd *pd) {
+char * alloc_shared(int size, uint32_t * shm_key_ret, struct ibv_pd *pd) {
 	size = round_up<kHugePageSize>(size);
 	int shm_key, shm_id;
 	while(true) {
@@ -28,6 +29,7 @@ char * alloc_shared(int size, int * shm_key_ret, struct ibv_pd *pd) {
 		shm_key = std::abs(shm_key);
 		errno = 0;
 		shm_id = shmget(shm_key, size, IPC_CREAT | IPC_EXCL | 0666 | SHM_HUGETLB);
+		//shm_id = shmget(shm_key, size, IPC_CREAT | IPC_EXCL | 0666);
 		
 		if (shm_id == -1) {
 			switch(errno) {
@@ -47,13 +49,15 @@ char * alloc_shared(int size, int * shm_key_ret, struct ibv_pd *pd) {
 	rt_assert(shm_buf != nullptr, "Allocation failed at shmat");
 	
 
+	mlock(shm_buf, size);
+
 	// This makes sure the shared memory segment is destroyed when the process exits	
 	shmctl(shm_id, IPC_RMID, nullptr);
 	
 	// The memory also needs to be bound to the numa node, but we only have one numa node
 
 	// We will need to register the memory otherwise we will see a completion error
-	struct ibv_mr *mr = ibv_reg_mr(pd, shm_buf, size, IBV_ACCESS_LOCAL_WRITE);
+	struct ibv_mr *mr = ibv_reg_mr(pd, shm_buf, size, IBV_ACCESS_LOCAL_WRITE); // | IBV_ACCESS_HUGETLB);
 	rt_assert(mr != nullptr, "Failed to register memory");
 	std::cout << "Registered " << size / (1024 * 1024) << " MB (lkey = " << mr->lkey << ")" << std::endl;
 	

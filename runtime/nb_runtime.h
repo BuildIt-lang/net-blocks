@@ -5,6 +5,7 @@
 #include "gen_headers.h"
 #include "nb_timer.h"
 #include <stdio.h>
+#include <arpa/inet.h>
 #ifdef __cplusplus 
 extern "C" {
 #endif
@@ -24,6 +25,13 @@ static inline void nb__assert(int b, const char* error) {
 	}
 }
 
+// Routing table
+struct routing_table_entry {
+	unsigned int global_id;
+	unsigned long long local_id;
+};
+unsigned long long nb__routing_table_lookup_from_global(unsigned int, struct routing_table_entry*, int routing_table_size);
+unsigned short nb__do_ip_checksum(unsigned char*, size_t len);
 
 // Data queue methods
 struct data_queue_t* nb__new_data_queue(void);
@@ -40,24 +48,30 @@ void nb__delete_connection(unsigned sa);
 nb__connection_t* nb__retrieve_connection(unsigned sa);
 
 
-void nb__debug_packet(char* p);
+void nb__debug_packet(char* p, size_t len);
 
 
 // Network interface API
 char* nb__poll_packet(int*, int);
 int nb__send_packet(char*, int);
+void nb__transport_default_init(void);
+void nb__transport_default_deinit(void);
+char* nb__request_send_buffer(void);
+void* nb__return_send_buffer(char*);
+
+
+// Transport specific API
 void nb__ipc_init(const char* sock_path, int mode);
 void nb__ipc_deinit();
 void nb__mlx5_init(void);
-char* nb__request_send_buffer(void);
-void* nb__return_send_buffer(char*);
+
 
 
 // Generated protocol API
 void nb__run_ingress_step (void*, int);
 int nb__send (nb__connection_t* arg0, char* arg1, int arg2);
 void nb__destablish (nb__connection_t* arg0);
-nb__connection_t* nb__establish (unsigned long long arg0, unsigned int arg1, unsigned int arg2, void (*arg3)(int, nb__connection_t*));
+nb__connection_t* nb__establish (unsigned int arg0, unsigned int arg1, unsigned int arg2, void (*arg3)(int, nb__connection_t*));
 void nb__net_init (void);
 void nb__reliable_redelivery_timer_cb(nb__timer*, void* param, unsigned long long to);
 
@@ -75,13 +89,15 @@ void* nb__get_user_data(nb__connection_t*);
 
 
 extern char nb__reuse_mtu_buffer[];
-extern unsigned long long nb__my_host_id;
+extern unsigned int nb__my_host_id;
+extern unsigned long long nb__my_local_host_id;
 extern nb__net_state_t* nb__net_state;
-
 extern unsigned long long nb__wildcard_host_identifier;
 
-
 extern unsigned long long nb__get_time_ms_now(void);
+
+#define nb__info_log(str, ...) fprintf(stderr, "INFO [%s]: " str "\n", __VA_ARGS__)
+
 #ifdef __cplusplus 
 }
 #endif

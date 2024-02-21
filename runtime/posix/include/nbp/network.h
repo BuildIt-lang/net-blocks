@@ -12,10 +12,7 @@
 // implementations
 
 
-// these two functions are similar, except for the fact that 
-// they assume different roles for the underlying communication interface
-int nbp_init_server(const char* ip);
-int nbp_init_client(const char* ip);
+int nbp_default_init(const char* ip);
 
 int nbp_socket (int domain, int type, int protocol);
 

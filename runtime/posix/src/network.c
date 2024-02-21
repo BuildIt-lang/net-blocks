@@ -27,7 +27,7 @@ static void nb_step_delay(void) {
 	// This is a configurable delay function, 
 	// in real time-low latency applications that doesn't require OS intervention
 	// this will be NOP
-	usleep(100);	
+	//usleep(100);	
 }
 
 static int grab_free_fd(void) {
@@ -40,6 +40,10 @@ static int grab_free_fd(void) {
 }
 
 volatile static unsigned fd_accept_counter[MAX_FDS];
+static unsigned fd_establish_status[MAX_FDS];
+
+static int port_occupied[100000 - 8000]; // Flags to check if port is free
+static unsigned short fd_src_port[MAX_FDS];
 
 // The arguments to this function are completely ignored
 // the stack will support only one type of socket. 
@@ -52,7 +56,8 @@ int nbp_socket(int domain, int type, int protocol) {
 	// have all the parameters	
 	fd_table[fd] = NULL;
 	fd_accept_counter[fd] = 0;
-
+	fd_establish_status[fd] = 0;
+	fd_src_port[fd] = 0;
 	nbp_debug("nbp_socket returning = %d", fd);
 
 	return fd;
@@ -65,13 +70,26 @@ static void nb_posix_common_callback(int event, nb__connection_t * c) {
 		int fd = fd_from_connection(c);
 		nbp_debug("Callback event on fd = %d", fd);
 		fd_accept_counter[fd]++;
+	} else if (event == QUEUE_EVENT_ESTABLISHED) {
+		int fd = fd_from_connection(c);
+		nbp_debug("Callback event on fd = %d", fd);
+		fd_establish_status[fd] = 1;
 	}
 	return;
 }
 
 // These are the assignable source ports 
 // for connect
-static unsigned int port_counter = 20;
+static unsigned int find_free_port(void) {
+	for (int i = 8080; i < 10000; i++) {
+		if (!port_occupied[i - 8000]) {
+			port_occupied[i - 8000] = 1;
+			return i;
+		}
+	}
+	assert(0);
+	return 0;
+}
 
 int nbp_connect (int sockfd, const struct sockaddr* _addr, socklen_t addrLen) {
 
@@ -88,22 +106,21 @@ int nbp_connect (int sockfd, const struct sockaddr* _addr, socklen_t addrLen) {
 	// a connect needs the destination address and port
 	// and we need to assign a port for source	
 
-	unsigned int src_port = port_counter++;
+	unsigned int src_port = find_free_port();
 	unsigned int dst_port = addr->sin_port;
-	unsigned long dst_addr = addr->sin_addr.s_addr;
-	unsigned char dst_addr_char[6] = {0, 0, 0, 0, 0, 0};
-	memcpy(dst_addr_char, &dst_addr, sizeof(dst_addr_char));
+	unsigned int dst_addr = addr->sin_addr.s_addr;
 	
 	// we can now actually establish the connection and create a connection object
 	assert(nb_fd[sockfd] == 1);
 	assert(fd_table[sockfd] == NULL);
 	
-	fd_table[sockfd] = nb__establish(dst_addr_char, dst_port, src_port, nb_posix_common_callback);
+	fd_table[sockfd] = nb__establish(dst_addr, dst_port, src_port, nb_posix_common_callback);
 	nb__set_user_data(fd_table[sockfd], (void*)(size_t) sockfd);
 
-	// This currently isn't required to be called repeatedly, but when establish is changed to 
-	// fire an event, we will run this till establish event is called
-	nb__main_loop_step();	
+	while (fd_establish_status[sockfd] != 1) {
+		nb__main_loop_step();	
+		nb_step_delay();
+	}
 	return 0;
 }
 
@@ -121,7 +138,7 @@ int nbp_bind(int sockfd, const struct sockaddr *_addr, socklen_t addrlen) {
 	// 0 is the wildcard for destination ports
 	unsigned int dst_port = 0;
 	// Set the dst addr to also be wildcard
-	char* dst_addr = nb__wildcard_host_identifier;
+	unsigned long long dst_addr = nb__wildcard_host_identifier;
 
 	// we can now actually establish the connection and create a connection object
 	assert(nb_fd[sockfd] == 1);
@@ -184,7 +201,8 @@ int nbp_accept(int sockfd, struct sockaddr *addr, socklen_t * addrlen) {
 		addr_in->sin_family = AF_INET;
 		addr_in->sin_port = fd_table[fd]->remote_app_id;
 		addr_in->sin_addr.s_addr = 0;
-		memcpy(&(addr_in->sin_addr.s_addr), fd_table[fd]->remote_host_id, sizeof(addr_in->sin_addr.s_addr));
+		//memcpy(&(addr_in->sin_addr.s_addr), fd_table[fd]->remote_host_id, sizeof(addr_in->sin_addr.s_addr));
+		addr_in->sin_addr.s_addr = fd_table[fd]->remote_host_id;
 		*addrlen = sizeof(struct sockaddr_in);
 	}
 	
@@ -296,26 +314,20 @@ int nbp_close(int fd) {
 	// close the underlying file	
 	// If we add a close event, we will wait for 
 	// the event
+	// Free up the port to be used again
+	port_occupied[fd_src_port[fd]] = 0;
 	fd_table[fd] = NULL;
 	nb_fd[fd] = 0;
 	close(fd);
 	return 0;
 }
 
-int nbp_init_server(const char* ip) {
-	nb__ipc_init("/tmp/ipc_socket", 1);
+int nbp_default_init(const char* ip) {
+	nb__transport_default_init();
+	unsigned int my_ip = inet_addr(ip);
+	nb__my_host_id = my_ip;
 	nb__net_init();
-	unsigned long my_ip = inet_addr(ip);
-	memcpy(nb__my_host_id, &my_ip, 6);
-	printf("nbp_init_server complete");
-	return 0;
-}
-int nbp_init_client(const char* ip) {
-	nb__ipc_init("/tmp/ipc_socket", 0);
-	nb__net_init();
-	unsigned long my_ip = inet_addr(ip);
-	memcpy(nb__my_host_id, &my_ip, 6);
-	return 0;
+	return 0;	
 }
 
 int nbp_pause(void) {

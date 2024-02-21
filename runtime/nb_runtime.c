@@ -2,6 +2,15 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <time.h>
+#include <ctype.h>
+
+enum signaling_state_t {
+	WAITING_FOR_SIGNAL = 0,
+	SIGNALED = 1,
+	SIGNAL_HANDLED = 2, 
+	SIGNAL_NA = 3,
+};
+
 
 struct data_queue_t* nb__new_data_queue(void) {
 	struct data_queue_t * q = malloc(sizeof(struct data_queue_t));
@@ -68,7 +77,8 @@ nb__connection_t* nb__accept(nb__connection_t* c, void (*callback)(int, nb__conn
 	unsigned int dst_app_id = c->local_app_id;
 	void* packet = c->accept_queue->packet[index];
 	nb__connection_t* s = nb__establish(src_host_id, src_app_id, dst_app_id, callback);
-	
+	// For an accepted connection, we have already been signalled
+	s->signaling_state = SIGNALED;	
 	// If is okay to pass 0 for now, because we know we aren't using the size	
 	// TODO: Fix this later by storing size
 	if (packet)
@@ -77,7 +87,6 @@ nb__connection_t* nb__accept(nb__connection_t* c, void (*callback)(int, nb__conn
 	int i;
 	for (i = 0; i < c->accept_queue->current_elems; i++) {
 		if (c->accept_queue->src_app_id[i] == src_app_id 
-			//&& memcmp(c->accept_queue->src_host_id[i], src_host_id, HOST_IDENTIFIER_LEN) == 0) {
 			&& c->accept_queue->src_host_id[i] == src_host_id) {
 			void* packet = c->accept_queue->packet[i];
 			if (packet)
@@ -112,6 +121,12 @@ static void nb__cycle_connections(void) {
 			c->callback_f(QUEUE_EVENT_ACCEPT_READY, c);
 		}
 */
+
+		if (c->signaling_state == SIGNALED) {
+			c->callback_f(QUEUE_EVENT_ESTABLISHED, c);
+			c->signaling_state = SIGNAL_HANDLED;
+		}
+
 		// Now check for read ready
 		if (c->input_queue->current_elems) {
 			c->callback_f(QUEUE_EVENT_READ_READY, c);
@@ -143,17 +158,31 @@ void nb__main_loop_step(void) {
 
 // Set this at init 
 //char nb__my_host_id[6] = {0};
-unsigned long long nb__my_host_id;
+unsigned int nb__my_host_id;
+unsigned long long nb__my_local_host_id;
 
 nb__net_state_t* nb__net_state;
 
 
-void nb__debug_packet(char* p) {
-	int i = 0;
-	for (i = 0; i < 64; i++) {
-		printf("%x ", (unsigned char) p[i]);
-	}
-	printf("\n");
+void nb__debug_packet(char* p, size_t len) {
+
+        int num_rows = ((len + 15) / 16);
+        for (int r = 0; r < num_rows; r++) {
+                for (int c = 0; c < 16; c++) {
+                        if (r * 16 + c < len)
+                                printf("%02x ", (unsigned char) p[r * 16 + c]);
+                        else
+                                printf("   ");
+                }
+                printf ("| ");
+                for (int c = 0; c < 16; c++) {
+                        if ((r * 16 + c < len) && isprint(p[r * 16 + c]))
+                                printf("%c", p[r * 16 + c]);
+                        else
+                                printf(".");
+                }
+                printf("\n");
+        }
 }
 
 unsigned long long nb__wildcard_host_identifier = 0;
@@ -174,4 +203,37 @@ void nb__set_user_data(nb__connection_t* c, void* user_data) {
 }
 void* nb__get_user_data(nb__connection_t* c) {
 	return c->user_data;
+}
+
+unsigned long long nb__routing_table_lookup_from_global(unsigned int local_id, struct routing_table_entry* entries, int routing_table_size) {
+	// When routing table is not initalized, the local ids are the same as the global ids
+	if (entries == NULL)
+		return (unsigned long long) local_id;
+	for (int i = 0; i < routing_table_size; i++) {
+		if (entries[i].local_id == local_id) 
+			return entries[i].global_id;
+	}
+	return local_id;
+}
+unsigned short nb__do_ip_checksum(unsigned char* p, size_t len) {
+	unsigned int checksum = 0;
+	unsigned short * packet = (unsigned short*) p;
+	int i;
+	for (i = 0; i < len / 2; i++) {
+		checksum += ntohs(packet[i]);
+	}
+	unsigned lower = checksum & 0xffffu;
+	unsigned upper = (checksum >> 16) & 0xffffu;
+
+	checksum = lower + upper;
+
+	lower = checksum & 0xffffu;
+	upper = (checksum >> 16) & 0xffffu;
+
+	checksum = lower + upper;
+
+	lower = checksum & 0xffffu;
+	lower = lower ^ 0xffffu;
+	lower = htons(lower);
+	return lower;
 }
