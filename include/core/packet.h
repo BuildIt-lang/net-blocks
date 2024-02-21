@@ -35,6 +35,7 @@ struct dynamic_member {
 	virtual bytes get_addr(bytes) = 0;
 	virtual void set_integer(bytes, builder::dyn_var<unsigned long long>);
 	virtual builder::dyn_var<unsigned long long> get_integer(bytes);
+	virtual builder::dyn_var<char*> serialize_for_debug(bytes) = 0;
 };
 
 enum class member_flags {
@@ -193,6 +194,21 @@ struct generic_integer_member: public dynamic_member {
 			set_bits_upper(base, bit_start, bit_end, val);
 		}
 	}	
+
+	builder::dyn_var<char*> serialize_for_debug(bytes base) {
+		builder::dyn_var<unsigned long long> val = get_integer(base);
+		builder::dyn_var<char*> buffer = runtime::malloc(1024);
+		builder::dyn_var<char*> seek = buffer;
+
+		seek += runtime::sprintf(seek, "%llu (", val);
+		builder::dyn_var<unsigned char*> data = runtime::to_void_ptr(&val);
+
+		for (builder::dyn_var<int> i = 0; i < (int)sizeof(T); i = i + 1) {
+			seek += runtime::sprintf(seek, "%02x:", data[i]);
+		}
+		seek += runtime::sprintf(seek - 1, ")");
+		return buffer;
+	}	
 };
 
 template <int N>
@@ -215,6 +231,17 @@ struct byte_array_member: public dynamic_member {
 	bytes get_addr(bytes base) {
 		assert(get_offset() % byte_size == 0 && "Cannot obtain address for non aligned members");
 		return base + get_offset() / byte_size;
+	}
+	builder::dyn_var<char*> serialize_for_debug(bytes base) {
+		builder::dyn_var<char*> val = runtime::malloc(7);
+		val[0] = '<';
+		val[1] = 'd';
+		val[2] = 'a';
+		val[3] = 't';
+		val[4] = 'a';
+		val[5] = '>';
+		val[6] = 0;
+		return val;
 	}
 };
 

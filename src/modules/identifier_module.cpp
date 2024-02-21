@@ -34,13 +34,18 @@ void identifier_module::init_module(void) {
 
 	auto dst_host_id = new generic_integer_member<unsigned long long, HOST_IDENTIFIER_LEN * byte_size>((int) member_flags::aligned);
 	auto src_host_id = new generic_integer_member<unsigned long long, HOST_IDENTIFIER_LEN * byte_size>((int) member_flags::aligned);
+
 	net_packet.add_member("dst_host_id", dst_host_id, 1);
 	net_packet.add_member("src_host_id", src_host_id, 1);
 	// Member to identify protocol 
 	net_packet.add_member("protocol_identifier", new generic_integer_member<unsigned int>((int)member_flags::aligned), 1);
 
-	net_packet.add_member("dst_app_id", new generic_integer_member<int>((int)member_flags::aligned), 3);
-	net_packet.add_member("src_app_id", new generic_integer_member<int>((int)member_flags::aligned), 3);
+	auto dst_app_id = new generic_integer_member<int>((int)member_flags::aligned);
+	dst_app_id->set_custom_range(8080, 8088);
+	net_packet.add_member("dst_app_id", dst_app_id, 3);
+	auto src_app_id = new generic_integer_member<int>(0);
+	src_app_id->set_custom_range(8080, 8088);
+	net_packet.add_member("src_app_id", src_app_id, 3);
 
 
 	

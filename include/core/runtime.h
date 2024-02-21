@@ -14,6 +14,8 @@ extern builder::dyn_var<int (void*, void*, int)> memcmp;
 extern builder::dyn_var<void* (void*)> to_void_ptr;
 extern builder::dyn_var<unsigned long long (void*)> to_ull;
 
+extern builder::dyn_var<void(void)> sprintf;
+
 extern builder::dyn_var<int (void)> size_of;
 
 extern builder::dyn_var<char* (int*, int)> poll_packet;

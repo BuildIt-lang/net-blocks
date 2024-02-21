@@ -12,6 +12,8 @@ builder::dyn_var<unsigned long long (void*)> to_ull = builder::as_global("(unsig
 builder::dyn_var<void (void*, void*, int)> memcpy = builder::as_global("memcpy");
 builder::dyn_var<int (void*, void*, int)> memcmp = builder::as_global("memcmp");
 
+builder::dyn_var<void(void)> sprintf = builder::as_global("sprintf");
+
 builder::dyn_var<int (void)> size_of = builder::as_global("sizeof");
 
 builder::dyn_var<char* (int*, int)> poll_packet = builder::as_global ("nb__poll_packet");

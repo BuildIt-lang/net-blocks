@@ -11,7 +11,6 @@ enum signaling_state_t {
 	SIGNAL_NA = 3,
 };
 
-
 struct data_queue_t* nb__new_data_queue(void) {
 	struct data_queue_t * q = malloc(sizeof(struct data_queue_t));
 	q->current_elems = 0;
@@ -166,23 +165,23 @@ nb__net_state_t* nb__net_state;
 
 void nb__debug_packet(char* p, size_t len) {
 
-        int num_rows = ((len + 15) / 16);
-        for (int r = 0; r < num_rows; r++) {
-                for (int c = 0; c < 16; c++) {
-                        if (r * 16 + c < len)
-                                printf("%02x ", (unsigned char) p[r * 16 + c]);
-                        else
-                                printf("   ");
-                }
-                printf ("| ");
-                for (int c = 0; c < 16; c++) {
-                        if ((r * 16 + c < len) && isprint(p[r * 16 + c]))
-                                printf("%c", p[r * 16 + c]);
-                        else
-                                printf(".");
-                }
-                printf("\n");
-        }
+	int num_rows = ((len + 15) / 16);	
+	for (int r = 0; r < num_rows; r++) {
+		for (int c = 0; c < 16; c++) {
+			if (r * 16 + c < len)
+				printf("%02x ", (unsigned char) p[r * 16 + c]);
+			else 
+				printf("   ");
+		}
+		printf ("| ");
+		for (int c = 0; c < 16; c++) {
+			if ((r * 16 + c < len) && isprint(p[r * 16 + c])) 
+				printf("%c", p[r * 16 + c]);	
+			else
+				printf(".");
+		}
+		printf("\n");
+	}
 }
 
 unsigned long long nb__wildcard_host_identifier = 0;
