@@ -67,7 +67,6 @@ char* nb__poll_packet(int* size, int headroom) {
 }
 
 int nb__send_packet(char* buff, int len) {
-	nb__debug_packet(buff, len);	
 	int ret = write(main_socket, buff, len);
 	return ret;
 }
