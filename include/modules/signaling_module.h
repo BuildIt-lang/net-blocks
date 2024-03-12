@@ -1,3 +1,5 @@
+#ifndef NET_BLOCKS_SIGNALING_MODULE_H
+#define NET_BLOCKS_SIGNALING_MODULE_H
 
 #include "core/framework.h"
 #include "modules/interface_module.h"
