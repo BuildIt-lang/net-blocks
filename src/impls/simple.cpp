@@ -10,46 +10,13 @@ int main(int argc, char* argv[]) {
 	}	
 	interface_module::instance.init_module();
 
-
-	int scenario = 3;
-
 	identifier_module::instance.configFlowIdentifier(identifier_module::flow_identifier_t::src_dst_identifier);
 	routing_module::instance.configEnableRouting();
-
 	signaling_module::instance.configEnableSignaling();
-	//signaling_module::instance.configDisableSignaling();
-
-	if (scenario == 1) {
-		inorder_module::instance.configInorderStrategy(inorder_module::hold_forever);
-		reliable_module::instance.configEnableReliability();	
-		checksum_module::instance.configEnableChecksum();
-		checksum_module::instance.configChecksumType(checksum_module::checksum_type_t::full_packet);
-	} else if (scenario == 2) {
-		inorder_module::instance.configInorderStrategy(inorder_module::drop_out_of_order);
-		reliable_module::instance.configDisableReliability();	
-		checksum_module::instance.configEnableChecksum();
-		checksum_module::instance.configChecksumType(checksum_module::checksum_type_t::header_only);
-	} else if (scenario == 3) {
-		inorder_module::instance.configInorderStrategy(inorder_module::no_inorder);
-		reliable_module::instance.configDisableReliability();	
-		checksum_module::instance.configDisableChecksum();
-	}
-
-	reliable_module::instance.configEnableReliability();	
 	inorder_module::instance.configInorderStrategy(inorder_module::hold_forever);
-
-	// Compatibility related schedules
-	//payload_module::instance.configEnableCompatibilityMode();
-	//identifier_module::instance.configEnableCompatibilityMode();
-	//routing_module::instance.configEnableCompatibilityMode();
-
-	// Enable/disable schedules
-	//inorder_module::instance.configInorderStrategy(inorder_module::hold_forever);
-	//inorder_module::instance.configInorderStrategy(inorder_module::no_inorder);
-
-	
-
-
+	reliable_module::instance.configEnableReliability();	
+	checksum_module::instance.configEnableChecksum();
+	checksum_module::instance.configChecksumType(checksum_module::checksum_type_t::full_packet);
 
 	payload_module::instance.init_module();
 	signaling_module::instance.init_module();	

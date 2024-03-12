@@ -16,7 +16,6 @@ void checksum_module::init_module(void) {
 	m_send_depends = {&identifier_module::instance};
 	m_ingress_depends = {&network_module::instance};
 
-	//net_packet.add_member("checksum", new generic_integer_member<unsigned short>((int)member_flags::aligned), 2);
 	net_packet.add_member("checksum", new generic_integer_member<unsigned short>(0), 4);
 	framework::instance.register_module(this);
 }

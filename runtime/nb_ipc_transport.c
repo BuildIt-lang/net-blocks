@@ -93,7 +93,7 @@ char* nb__poll_packet(int* size, int headroom) {
 	return NULL;
 }
 int nb__send_packet(char* buff, int len) {
-	nb__debug_packet(buff, len);
+	//nb__debug_packet(buff, len);
 	if (nb__ipc_simulate_packet_drop) {
 		int r = rand() % PACKET_DROP_CHANCE;
 		if (r == 0) {
