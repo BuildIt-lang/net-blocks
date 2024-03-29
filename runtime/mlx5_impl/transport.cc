@@ -14,7 +14,7 @@ void post_wq_recvs(struct mlx5dv_rwq* rwq, char* buffer, unsigned int lkey, int 
 	*(rwq->dbrec) = htobe32(count);
 }
 
-void mlx5_try_transport(struct transport_t* tr) {
+void mlx5_try_transport(struct transport_t* tr, const char* requested_iface_name) {
 	int num_devices = 0;
 	struct ibv_device **dev_list = ibv_get_device_list(&num_devices);
 
@@ -37,7 +37,7 @@ void mlx5_try_transport(struct transport_t* tr) {
 		std::string resolved_netdev_name = ibdev2netdev(resolved_ibdev_name);
 		std::cout << "Trying device = " << resolved_netdev_name  << std::endl;
 
-		if (resolved_netdev_name != "eth3") continue;
+		if (resolved_netdev_name != requested_iface_name) continue;
 
 		for (uint8_t port_i = 1; port_i <= device_attr.phys_port_cnt; port_i++) {
 			struct ibv_port_attr port_attr;

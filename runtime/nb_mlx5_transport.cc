@@ -18,8 +18,8 @@ static struct transport_t transport;
 
 char nb__reuse_mtu_buffer[MLX5_MTU];
 
-void nb__mlx5_init(void) {
-	mlx5_try_transport(&transport);
+void nb__mlx5_init(const char* name) {
+	mlx5_try_transport(&transport, name);
 }
 
 char* nb__request_send_buffer(void) {
@@ -63,7 +63,7 @@ char* nb__poll_packet(int* size, int headroom) {
 }
 
 void nb__transport_default_init(void) {
-	nb__mlx5_init();
+	nb__mlx5_init("eth2");
 }
 void nb__transport_default_deinit(void) {
 }

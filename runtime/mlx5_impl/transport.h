@@ -48,7 +48,7 @@ struct transport_t {
 	int sends_to_signal;
 };
 
-void mlx5_try_transport(struct transport_t*);
+void mlx5_try_transport(struct transport_t*, const char* name);
 char* mlx5_get_next_send_buffer(transport_t *tr);
 char* mlx5_get_next_recv_buffer(transport_t *tr);
 int mlx5_try_recv(transport_t* tr);

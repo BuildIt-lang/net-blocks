@@ -63,7 +63,7 @@ void* nb__return_send_buffer(char*);
 // Transport specific API
 void nb__ipc_init(const char* sock_path, int mode);
 void nb__ipc_deinit();
-void nb__mlx5_init(void);
+void nb__mlx5_init(const char* name);
 
 
 /*
