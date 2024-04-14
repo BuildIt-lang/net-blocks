@@ -160,7 +160,7 @@ void mlx5_try_transport(struct transport_t* tr, const char* requested_iface_name
 	// Create the recv_cq also with the mlx5dv API
 	//struct ibv_cq_init_attr_ex cq_init_attr;
 	memset(&cq_init_attr, 0, sizeof(cq_init_attr));	
-	cq_init_attr.cqe = 4;
+	cq_init_attr.cqe = 512;
 	cq_init_attr.flags = IBV_CREATE_CQ_ATTR_IGNORE_OVERRUN;
 	cq_init_attr.parent_domain = pd;
 	cq_init_attr.comp_mask = IBV_CQ_INIT_ATTR_MASK_FLAGS;
@@ -298,17 +298,20 @@ void mlx5_try_transport(struct transport_t* tr, const char* requested_iface_name
 	struct mlx5_cq* mcq = to_mcq(recv_cq);
 	struct mlx5_cqe64* recv_cqe_arr = (struct mlx5_cqe64*) mcq->buf_a.buf;
 	rt_assert(recv_cqe_arr != nullptr, "Failed to find buffer inside recv_cq");
-	printf("Length of buffer = %zu\n", mcq->buf_a.length / sizeof(struct mlx5_cqe64));	
+	int num_cqe = mcq->buf_a.length / sizeof(struct mlx5_cqe64);
+	printf("Length of buffer = %d\n", num_cqe);	
 	printf("CQE size = %d\n", mcq->active_cqes);	
 	printf("Cons index = %d\n", mcq->cons_index);
-	for (size_t i = 0; i < 8; i++) {
+
+/*
+	for (size_t i = 0; i < num_cqe; i++) {
 		// Make it think that all buffers have been filled and we are about to fill up the first packet
 		recv_cqe_arr[i].wqe_id = htons(UINT16_MAX);
-		recv_cqe_arr[i].wqe_counter = htons(512 - 8 + i);
+		recv_cqe_arr[i].wqe_counter = htons(512 - num_cqe + i);
 		//grab_snapshot(&recv_cqe_arr[i]);
 	}
 	//grab_snapshot(&recv_cqe_arr[8]);
-
+*/
 
 	size_t per_size = IBV_FRAME_SIZE * (1ull << 9);
 	uint32_t lkey;
@@ -366,24 +369,31 @@ void mlx5_try_transport(struct transport_t* tr, const char* requested_iface_name
 	return;
 }
 
+
+
+
+
 int mlx5_try_send(transport_t* tr, char* buffer, int len) {
-	struct ibv_send_wr wr;
-	struct ibv_sge sgl;
-	wr.num_sge = 1;
-	wr.next = nullptr;
-	wr.sg_list = &sgl;
-	wr.send_flags = 0;
+	struct ibv_send_wr send_wr;
+	struct ibv_sge send_sgl;
+
+	struct ibv_send_wr *wr = &send_wr;
+	struct ibv_sge *sgl = &send_sgl;
+	wr->num_sge = 1;
+	wr->next = nullptr;
+	wr->sg_list = sgl;
+	wr->send_flags = 0;
 	if (len < MAX_INLINE_DATA_SIZE + MLX5_ETH_INLINE_HEADER_SIZE)
-		wr.send_flags |= IBV_SEND_INLINE;
+		wr->send_flags |= IBV_SEND_INLINE;
 
 	//wr.send_flags |= IBV_SEND_SIGNALED;
-	wr.opcode = IBV_WR_SEND;
+	wr->opcode = IBV_WR_SEND;
 	
-	sgl.addr = (uint64_t)buffer;
-	sgl.length = len;
-	sgl.lkey = tr->send_key;	
+	sgl->addr = (uint64_t)buffer;
+	sgl->length = len;
+	sgl->lkey = tr->send_key;	
 	struct ibv_send_wr* bad_wr = nullptr;
-	int res = ibv_post_send(tr->send_qp, &wr, &bad_wr);
+	int res = ibv_post_send(tr->send_qp, wr, &bad_wr);
 	//printf("Err = %d\n", res);
 	rt_assert(res == 0, "Failed to post send");
 
@@ -398,8 +408,8 @@ int mlx5_try_send(transport_t* tr, char* buffer, int len) {
 }
 
 int mlx5_try_recv(transport_t* tr) {
-	struct ibv_wc recv_wc[16];
-	int ret = ibv_poll_cq(tr->recv_cq, 16, recv_wc);
+	struct ibv_wc recv_wc[128];
+	int ret = ibv_poll_cq(tr->recv_cq, 128, recv_wc);
 	//if (ret != 0) printf("Received status = %s, vendor error = %d\n", ibv_wc_status_str(recv_wc[0].status), recv_wc[0].vendor_err);
 	tr->recvs_to_post += ret;
 	while (tr->recvs_to_post >= 512) {

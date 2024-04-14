@@ -132,6 +132,13 @@ simple_network_test: mlx5_runtime $(SIMPLE_RUNTIME_OBJS)
 	$(CXX) $(BUILD_DIR)/runtime/nb_mlx5_transport.o $(BUILD_DIR)/runtime/mlx5_impl/halloc.o $(BUILD_DIR)/runtime/mlx5_impl/transport.o $(SIMPLE_RUNTIME_OBJS) $(BUILD_DIR)/test/simple_network_test/server.o -o $(BUILD_DIR)/test/network_simple_server $(RDMA_CORE_FLAGS) -libverbs -lmlx5
 	$(CXX) $(BUILD_DIR)/runtime/nb_mlx5_transport.o $(BUILD_DIR)/runtime/mlx5_impl/halloc.o $(BUILD_DIR)/runtime/mlx5_impl/transport.o $(SIMPLE_RUNTIME_OBJS) $(BUILD_DIR)/test/simple_network_test/client.o -o $(BUILD_DIR)/test/network_simple_client $(RDMA_CORE_FLAGS) -libverbs -lmlx5
 
+
+
+mlx5_impl_test: mlx5_runtime
+	$(CXX) test/test_mlx5_impl/server.cpp $(BUILD_DIR)/runtime/mlx5_impl/halloc.o $(BUILD_DIR)/runtime/mlx5_impl/transport.o -o $(BUILD_DIR)/test/mlx5_impl_server -I $(RUNTIME_DIR)/mlx5_impl $(RDMA_CORE_FLAGS) -libverbs -lmlx5
+	$(CXX) test/test_mlx5_impl/client.cpp $(BUILD_DIR)/runtime/mlx5_impl/halloc.o $(BUILD_DIR)/runtime/mlx5_impl/transport.o -o $(BUILD_DIR)/test/mlx5_impl_client -I $(RUNTIME_DIR)/mlx5_impl $(RDMA_CORE_FLAGS) -libverbs -lmlx5
+
+
 	
 .PHONY: simple_test
 simple_test: executables $(SIMPLE_RUNTIME_OBJS)
