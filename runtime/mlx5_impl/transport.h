@@ -43,10 +43,18 @@ struct transport_t {
 	int recv_buffer_index;
 
 	struct mlx5_cqe64* recv_cqe_arr;
+	unsigned cqe_idx;
+	unsigned long long recv_index_cycle;
+
 	int recv_index_to_post;
 	int recvs_to_post;
 	int sends_to_signal;
 };
+
+static unsigned long long get_recv_cycle(int id, int counter) {
+	return id * 512 + counter;	
+}
+
 
 void mlx5_try_transport(struct transport_t*, const char* name);
 char* mlx5_get_next_send_buffer(transport_t *tr);

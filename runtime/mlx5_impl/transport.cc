@@ -160,7 +160,7 @@ void mlx5_try_transport(struct transport_t* tr, const char* requested_iface_name
 	// Create the recv_cq also with the mlx5dv API
 	//struct ibv_cq_init_attr_ex cq_init_attr;
 	memset(&cq_init_attr, 0, sizeof(cq_init_attr));	
-	cq_init_attr.cqe = 512;
+	cq_init_attr.cqe = 4;
 	cq_init_attr.flags = IBV_CREATE_CQ_ATTR_IGNORE_OVERRUN;
 	cq_init_attr.parent_domain = pd;
 	cq_init_attr.comp_mask = IBV_CQ_INIT_ATTR_MASK_FLAGS;
@@ -303,15 +303,17 @@ void mlx5_try_transport(struct transport_t* tr, const char* requested_iface_name
 	printf("CQE size = %d\n", mcq->active_cqes);	
 	printf("Cons index = %d\n", mcq->cons_index);
 
-/*
+
 	for (size_t i = 0; i < num_cqe; i++) {
 		// Make it think that all buffers have been filled and we are about to fill up the first packet
 		recv_cqe_arr[i].wqe_id = htons(UINT16_MAX);
-		recv_cqe_arr[i].wqe_counter = htons(512 - num_cqe + i);
+		recv_cqe_arr[i].wqe_counter = htons(511);
 		//grab_snapshot(&recv_cqe_arr[i]);
 	}
+	tr->recv_index_cycle = get_recv_cycle(UINT16_MAX, 511);
+	tr->cqe_idx = 0;
 	//grab_snapshot(&recv_cqe_arr[8]);
-*/
+
 
 	size_t per_size = IBV_FRAME_SIZE * (1ull << 9);
 	uint32_t lkey;
@@ -407,9 +409,42 @@ int mlx5_try_send(transport_t* tr, char* buffer, int len) {
 	return res;
 }
 
+const unsigned long long total_cycles = 65536 * 512;
+
+int get_packet_count(transport_t* tr) {
+	struct mlx5_cq* mcq = to_mcq(tr->recv_cq);
+	struct mlx5_cqe64* recv_cqe_arr = (struct mlx5_cqe64*) mcq->buf_a.buf;
+
+	int id = ntohs(recv_cqe_arr[tr->cqe_idx].wqe_id);
+	int counter = ntohs(recv_cqe_arr[tr->cqe_idx].wqe_counter);
+	
+	unsigned long long new_cycle = get_recv_cycle(id, counter);
+	unsigned long long diff = (new_cycle + total_cycles - tr->recv_index_cycle) % total_cycles;
+
+	if (diff == 0 || diff > 4096) return 0;
+	
+	tr->cqe_idx = (tr->cqe_idx + 1) % 8;
+	tr->recv_index_cycle = new_cycle;
+
+	return diff;
+
+}
+	
+
+
 int mlx5_try_recv(transport_t* tr) {
+/*
 	struct ibv_wc recv_wc[128];
 	int ret = ibv_poll_cq(tr->recv_cq, 128, recv_wc);
+	struct mlx5_cq* mcq = to_mcq(tr->recv_cq);
+	struct mlx5_cqe64* recv_cqe_arr = (struct mlx5_cqe64*) mcq->buf_a.buf;
+	if (ret != 0) {
+		for (int i = 0; i < 8; i++) {
+			printf("recv wrid = %d, %d\n", ntohs(recv_cqe_arr[i].wqe_id), ntohs(recv_cqe_arr[i].wqe_counter));
+		}
+	}
+*/
+	int ret = get_packet_count(tr);
 	//if (ret != 0) printf("Received status = %s, vendor error = %d\n", ibv_wc_status_str(recv_wc[0].status), recv_wc[0].vendor_err);
 	tr->recvs_to_post += ret;
 	while (tr->recvs_to_post >= 512) {

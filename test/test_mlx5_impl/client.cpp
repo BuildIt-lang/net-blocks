@@ -15,9 +15,19 @@ int main(int argc, char* argv[]) {
 
 	memset(msg_buffer, 'x', 256);	
 	msg_buffer[256] = 0;
-	
-	for (int i = 0; i < 1024; i++) {
-		send_message(&t);
+
+
+	for (int j = 0; j < 6; j++) {
+		for (int i = 0; i < 2048; i++) {
+			send_message(&t);
+		}
+
+		sleep(1);
 	}
+
+	memset(msg_buffer, 'y', 256);	
+	send_message(&t);
+
+	
 	
 }
