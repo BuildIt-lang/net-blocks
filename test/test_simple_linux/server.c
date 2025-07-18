@@ -23,7 +23,6 @@ static void callback(int event, nb__connection_t * c) {
 int main(int argc, char* argv[]) {
 	nb__linux_runtime_init("dummy0");
 	printf("Linux Runtime initialized\n");
-	nb__net_init();
 
 	unsigned long long server_id_i = 0;
 	unsigned long long client_id_i = 0;
@@ -31,6 +30,8 @@ int main(int argc, char* argv[]) {
 	memcpy(&client_id_i, client_id, sizeof(client_id));
 
 	nb__my_host_id = server_id_i;
+
+	nb__net_init();
 
 	nb__connection_t * conn = nb__establish(client_id_i, 8081, 8080, callback);
 

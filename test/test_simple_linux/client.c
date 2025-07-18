@@ -25,14 +25,14 @@ int main(int argc, char* argv[]) {
 	nb__linux_runtime_init("dummy0");
 	printf("Linux Runtime initialized\n");
 
-	nb__net_init();
-
 	unsigned long long server_id_i = 0;
 	unsigned long long client_id_i = 0;
 	memcpy(&server_id_i, server_id, sizeof(server_id));
 	memcpy(&client_id_i, client_id, sizeof(client_id));
 
 	nb__my_host_id = client_id_i;
+
+	nb__net_init();
 
 	nb__connection_t * conn = nb__establish(server_id_i, 8080, 8081, callback);
 	

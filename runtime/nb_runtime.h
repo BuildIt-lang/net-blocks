@@ -66,12 +66,10 @@ void nb__ipc_deinit();
 void nb__mlx5_init(const char* name);
 
 
-/*
 char* nb__request_send_buffer(void);
 void* nb__return_send_buffer(char*);
 void nb__linux_runtime_init(const char* iface);
 void nb__linux_runtime_deinit(void);
-*/
 
 // Generated protocol API
 void nb__run_ingress_step (void*, int);
